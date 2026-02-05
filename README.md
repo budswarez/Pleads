@@ -28,6 +28,8 @@ Application for capturing and managing business leads using Google Places API.
    - Edit `.env` and add your Google Places API key:
      ```
      VITE_GOOGLE_PLACES_KEY=your_api_key_here
+     VITE_SUPABASE_URL=https://your-project.supabase.co
+     VITE_SUPABASE_ANON_KEY=your-anon-key
      ```
 
 ## Running Locally
