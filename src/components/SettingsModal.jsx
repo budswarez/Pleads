@@ -18,7 +18,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
         apiKey, setApiKey, getApiKey,
         supabaseUrl, supabaseAnonKey, supabaseConnected,
         setSupabaseConfig, setSupabaseConnected,
-        getAllDataForSync, loadFromSupabase
+        getAllDataForSync, loadFromSupabase,
+        appTitle, appDescription, appLogoUrl, setBranding
     } = useStore();
 
     // Google API Key state
@@ -37,15 +38,23 @@ const SettingsModal = ({ isOpen, onClose }) => {
     const [showSql, setShowSql] = useState(false);
     const [sqlCopied, setSqlCopied] = useState(false);
 
+    // Branding State
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [logoUrl, setLogoUrl] = useState('');
+
     useEffect(() => {
         if (isOpen) {
             setLocalApiKey(apiKey || '');
             setLocalSupabaseUrl(supabaseUrl || '');
             setLocalSupabaseKey(supabaseAnonKey || '');
+            setTitle(appTitle || '');
+            setDescription(appDescription || '');
+            setLogoUrl(appLogoUrl || '');
             setApiKeySaved(false);
             setSupabaseStatus({ type: null, message: '' });
         }
-    }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey]);
+    }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey, appTitle, appDescription, appLogoUrl]);
 
     if (!isOpen) return null;
 
@@ -191,6 +200,54 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
                 {/* Content - Scrollable */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Branding Section */}
+                    <section className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                <span className="bg-primary/10 p-1 rounded-md text-primary">🎨</span> Personalização
+                            </h3>
+                            <button
+                                onClick={() => setBranding(title, description, logoUrl)}
+                                className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-md hover:bg-opacity-90"
+                            >
+                                Salvar Aparência
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-foreground">Nome da Aplicação</label>
+                                <input
+                                    type="text"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    placeholder="Ex: Minha Empresa Leads"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-foreground">URL do Logo</label>
+                                <input
+                                    type="text"
+                                    value={logoUrl}
+                                    onChange={(e) => setLogoUrl(e.target.value)}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    placeholder="/logo.png ou https://..."
+                                />
+                            </div>
+                            <div className="col-span-1 md:col-span-2 space-y-2">
+                                <label className="text-xs font-medium text-foreground">Descrição / Slogan</label>
+                                <input
+                                    type="text"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    placeholder="Ex: Sistema de Gestão..."
+                                />
+                            </div>
+                        </div>
+                        <hr className="border-border" />
+                    </section>
+
                     {/* Google Places API Section */}
                     <section className="space-y-4">
                         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">

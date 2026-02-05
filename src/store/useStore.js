@@ -38,6 +38,19 @@ const useStore = create(
             supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
             supabaseConnected: false,
 
+            // Branding Configuration
+            appTitle: 'Pichau Energy Leads',
+            appDescription: 'Sistema de Gerenciamento de Leads e Prospecção',
+            appLogoUrl: '/logo.png',
+
+            setBranding: (title, description, logoUrl) => {
+                set({
+                    appTitle: title,
+                    appDescription: description,
+                    appLogoUrl: logoUrl
+                });
+            },
+
             // Set API Key
             setApiKey: (key) => {
                 set({ apiKey: key });

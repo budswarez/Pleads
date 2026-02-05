@@ -249,7 +249,10 @@ function App() {
     getApiKey,
     supabaseUrl,
     supabaseAnonKey,
-    setSupabaseConnected
+    setSupabaseConnected,
+    appTitle,
+    appDescription,
+    appLogoUrl
   } = useStore();
 
   // Initialize Supabase if env vars are present
@@ -438,10 +441,12 @@ function App() {
       <header className="mb-8 max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src="/logo.png" alt="Pichau Energy Leads Logo" className="w-12 h-12 object-contain rounded-lg shadow-inner bg-black" />
+            {appLogoUrl && (
+              <img src={appLogoUrl} alt="Logo" className="w-12 h-12 object-contain rounded-lg shadow-inner bg-black" />
+            )}
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-primary">Pichau Energy Leads</h1>
-              <p className="text-muted-foreground mt-1">Sistema de Gerenciamento de Leads e Prospecção</p>
+              <h1 className="text-4xl font-bold tracking-tight text-primary">{appTitle}</h1>
+              <p className="text-muted-foreground mt-1">{appDescription}</p>
             </div>
           </div>
           <div className="flex gap-2">
