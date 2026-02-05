@@ -9,7 +9,7 @@ const DEFAULT_GOOGLE_PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY;
  * @param {string} apiKey - Google Places API key (optional, falls back to env)
  * @returns {Promise<{results: Array, nextPageToken: string}>} Object with results and next page token
  */
-export async function searchPlaces(city, state, category = 'restaurante', pageToken = null, apiKey = null) {
+export async function searchPlaces(city, state, category = 'restaurante', pageToken = null, apiKey = null, neighborhood = null) {
     const key = apiKey || DEFAULT_GOOGLE_PLACES_KEY;
 
     if (!key) {
@@ -18,7 +18,8 @@ export async function searchPlaces(city, state, category = 'restaurante', pageTo
 
     try {
         // Build search query
-        const query = `${category} em ${city}, ${state}, Brasil`;
+        const locationPart = neighborhood ? `${neighborhood}, ${city}, ${state}` : `${city}, ${state}`;
+        const query = `${category} em ${locationPart}, Brasil`;
 
         // Using local proxy to avoid CORS
         let url = `/api/google/place/textsearch/json?query=${encodeURIComponent(query)}&key=${key}`;

@@ -14,6 +14,7 @@ const useStore = create(
             // Selected location for filtering
             selectedState: null,
             selectedCity: null,
+            selectedNeighborhood: '',
 
             // Dynamic Lead Statuses
             statuses: [
@@ -43,12 +44,19 @@ const useStore = create(
             appDescription: 'Sistema de Gerenciamento de Leads e Prospecção',
             appLogoUrl: '/logo.png',
 
+            // Search Configuration
+            maxLeadsPerCategory: 60,
+
             setBranding: (title, description, logoUrl) => {
                 set({
                     appTitle: title,
                     appDescription: description,
                     appLogoUrl: logoUrl
                 });
+            },
+
+            setMaxLeadsPerCategory: (max) => {
+                set({ maxLeadsPerCategory: max });
             },
 
             // Set API Key
@@ -217,12 +225,17 @@ const useStore = create(
 
             // Set selected state
             setSelectedState: (state) => {
-                set({ selectedState: state, selectedCity: null });
+                set({ selectedState: state, selectedCity: null, selectedNeighborhood: '' });
             },
 
             // Set selected city
             setSelectedCity: (city) => {
-                set({ selectedCity: city });
+                set({ selectedCity: city, selectedNeighborhood: '' });
+            },
+
+            // Set selected neighborhood
+            setSelectedNeighborhood: (neighborhood) => {
+                set({ selectedNeighborhood: neighborhood });
             },
 
             // Get unique list of states from locations

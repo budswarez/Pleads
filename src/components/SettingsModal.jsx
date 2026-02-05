@@ -19,7 +19,8 @@ const SettingsModal = ({ isOpen, onClose }) => {
         supabaseUrl, supabaseAnonKey, supabaseConnected,
         setSupabaseConfig, setSupabaseConnected,
         getAllDataForSync, loadFromSupabase,
-        appTitle, appDescription, appLogoUrl, setBranding
+        appTitle, appDescription, appLogoUrl, setBranding,
+        maxLeadsPerCategory, setMaxLeadsPerCategory
     } = useStore();
 
     // Google API Key state
@@ -42,6 +43,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [logoUrl, setLogoUrl] = useState('');
+    const [localMaxLeads, setLocalMaxLeads] = useState(60);
 
     useEffect(() => {
         if (isOpen) {
@@ -51,10 +53,13 @@ const SettingsModal = ({ isOpen, onClose }) => {
             setTitle(appTitle || '');
             setDescription(appDescription || '');
             setLogoUrl(appLogoUrl || '');
+            setLocalMaxLeads(maxLeadsPerCategory || 60);
             setApiKeySaved(false);
             setSupabaseStatus({ type: null, message: '' });
         }
-    }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey, appTitle, appDescription, appLogoUrl]);
+    }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey, appTitle, appDescription, appLogoUrl, maxLeadsPerCategory]);
+
+
 
     if (!isOpen) return null;
 
@@ -207,10 +212,13 @@ const SettingsModal = ({ isOpen, onClose }) => {
                                 <span className="bg-primary/10 p-1 rounded-md text-primary">🎨</span> Personalização
                             </h3>
                             <button
-                                onClick={() => setBranding(title, description, logoUrl)}
+                                onClick={() => {
+                                    setBranding(title, description, logoUrl);
+                                    setMaxLeadsPerCategory(Number(localMaxLeads));
+                                }}
                                 className="text-xs bg-primary text-primary-foreground px-3 py-1 rounded-md hover:bg-opacity-90"
                             >
-                                Salvar Aparência
+                                Salvar Aparência e Limites
                             </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -243,6 +251,23 @@ const SettingsModal = ({ isOpen, onClose }) => {
                                     className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                                     placeholder="Ex: Sistema de Gestão..."
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                                    Limite de Leads (por Categoria)
+                                    <span className="text-[10px] text-muted-foreground font-normal">(Padrão: 60)</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="200"
+                                    value={Number(localMaxLeads)}
+                                    onChange={(e) => setLocalMaxLeads(e.target.value)}
+                                    className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                />
+                                <p className="text-[10px] text-muted-foreground">
+                                    Nota: O Google geralmente limita a 60 resultados. Aumentar não garante mais leads.
+                                </p>
                             </div>
                         </div>
                         <hr className="border-border" />

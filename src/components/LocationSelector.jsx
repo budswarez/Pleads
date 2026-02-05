@@ -85,6 +85,25 @@ const LocationSelector = () => {
                     />
                 </div>
             </div>
+
+            {/* Neighborhood Input */}
+            <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                    Bairro (Opcional)
+                </label>
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Ex: Savassi, Centro, etc."
+                        className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted-foreground/50"
+                        onChange={(e) => useStore.getState().setSelectedNeighborhood(e.target.value)}
+                        disabled={!selectedCity}
+                    />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                    Digite um bairro para refinar a busca. Deixe em branco para buscar em toda a cidade.
+                </p>
+            </div>
         </div>
     );
 };
