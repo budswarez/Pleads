@@ -111,22 +111,31 @@ const useStore = create(
                 }));
             },
 
-            // Add leads with deduplication by place_id
+            // Add leads with deduplication by place_id and merge/update capability
             addLeads: (newLeads) => {
-                const currentLeads = get().leads;
-                const existingPlaceIds = new Set(currentLeads.map(lead => lead.place_id));
+                const { leads: currentLeads } = get();
+                const existingMap = new Map(currentLeads.map(l => [l.place_id, l]));
+                let addedCount = 0;
 
-                const uniqueNewLeads = newLeads.filter(
-                    lead => !existingPlaceIds.has(lead.place_id)
-                );
+                newLeads.forEach(newLead => {
+                    if (existingMap.has(newLead.place_id)) {
+                        const existing = existingMap.get(newLead.place_id);
+                        existingMap.set(newLead.place_id, {
+                            ...existing,
+                            ...newLead,
+                            status: existing.status, // Preserve existing status
+                            notes: existing.notes,   // Preserve existing notes
+                            // Update categoryId if present in new search, otherwise keep existing
+                            categoryId: newLead.categoryId || existing.categoryId
+                        });
+                    } else {
+                        existingMap.set(newLead.place_id, newLead);
+                        addedCount++;
+                    }
+                });
 
-                if (uniqueNewLeads.length > 0) {
-                    set(prevState => ({
-                        leads: [...prevState.leads, ...uniqueNewLeads]
-                    }));
-                }
-
-                return uniqueNewLeads.length;
+                set({ leads: Array.from(existingMap.values()) });
+                return addedCount;
             },
 
             // Clear leads for the selected location or all leads

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { MapPin, Phone, MessageCircle, ExternalLink, Search, Settings, Loader2, Square, Plus, Trash2, Palette, X } from 'lucide-react';
+import { MapPin, Phone, MessageCircle, ExternalLink, Search, Settings, Loader2, Square, Plus, Trash2, Palette, X, Globe, Star, StarHalf } from 'lucide-react';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
 import SettingsModal from './components/SettingsModal';
@@ -275,9 +275,13 @@ function App() {
     // Category Filter
     let categoryMatch = activeTab === 'all';
     if (!categoryMatch) {
-      const leadCat = lead.category?.toLowerCase() || '';
-      if (activeTab === 'restaurant') categoryMatch = leadCat.includes('restaurant') || leadCat.includes('food');
-      else categoryMatch = leadCat.includes(activeTab);
+      if (lead.categoryId === activeTab) {
+        categoryMatch = true;
+      } else {
+        const leadCat = lead.category?.toLowerCase() || '';
+        if (activeTab === 'restaurant') categoryMatch = leadCat.includes('restaurant') || leadCat.includes('food');
+        else categoryMatch = leadCat.includes(activeTab);
+      }
     }
 
     // Status Filter
@@ -330,6 +334,7 @@ function App() {
                 const details = await getPlaceDetails(lead.place_id, getApiKey());
                 enrichedResults.push({
                   ...lead,
+                  categoryId: cat.id,
                   phone: details.phone,
                   website: details.website
                 });
@@ -383,6 +388,29 @@ function App() {
   const getStatusLabel = (statusId) => {
     const status = statuses.find(s => s.id === statusId);
     return status ? status.label : statusId;
+  };
+
+  const renderStars = (rating) => {
+    if (!rating) return null;
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} size={14} className="fill-yellow-400 text-yellow-400" />);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<StarHalf key={i} size={14} className="fill-yellow-400 text-yellow-400" />);
+      } else {
+        stars.push(<Star key={i} size={14} className="text-gray-300" />);
+      }
+    }
+    return (
+      <div className="flex items-center gap-0.5" title={`Avaliação: ${rating}`}>
+        {stars}
+        <span className="text-xs text-muted-foreground ml-1 font-medium">{rating}</span>
+      </div>
+    );
   };
 
   const handleClearLeads = () => {
@@ -514,6 +542,7 @@ function App() {
                 </button>
                 {categories.map(cat => {
                   const count = filteredLeads.filter(l => {
+                    if (l.categoryId === cat.id) return true;
                     const leadCat = l.category?.toLowerCase() || '';
                     if (cat.id === 'restaurant') return leadCat.includes('restaurant') || leadCat.includes('food');
                     return leadCat.includes(cat.id);
@@ -553,9 +582,13 @@ function App() {
                     // Category check first
                     let categoryMatch = activeTab === 'all';
                     if (!categoryMatch) {
-                      const leadCat = l.category?.toLowerCase() || '';
-                      if (activeTab === 'restaurant') categoryMatch = leadCat.includes('restaurant') || leadCat.includes('food');
-                      else categoryMatch = leadCat.includes(activeTab);
+                      if (l.categoryId === activeTab) {
+                        categoryMatch = true;
+                      } else {
+                        const leadCat = l.category?.toLowerCase() || '';
+                        if (activeTab === 'restaurant') categoryMatch = leadCat.includes('restaurant') || leadCat.includes('food');
+                        else categoryMatch = leadCat.includes(activeTab);
+                      }
                     }
                     return categoryMatch && l.status === status.id;
                   }).length;
@@ -624,7 +657,7 @@ function App() {
                         <h3 className="font-semibold text-lg line-clamp-1">{lead.name}</h3>
                       </div>
                       <span className="text-[10px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full inline-block">
-                        {lead.category}
+                        {categories.find(c => c.id === lead.categoryId)?.label || lead.category}
                       </span>
                     </div>
                     <div className="flex gap-1">
@@ -651,6 +684,15 @@ function App() {
                         <span>{lead.phone}</span>
                       </div>
                     )}
+                    {lead.website && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <Globe size={14} />
+                        <a href={lead.website} target="_blank" rel="noopener noreferrer" className="hover:underline text-primary truncate max-w-[200px] block">
+                          {lead.website}
+                        </a>
+                      </div>
+                    )}
+                    {renderStars(lead.rating)}
                   </div>
 
                   {/* Comment Section */}

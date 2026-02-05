@@ -58,6 +58,7 @@ export async function searchPlaces(city, state, category = 'restaurante', pageTo
             rating: place.rating || null,
             status: 'NEW',
             notes: [],
+            website: null,
             createdAt: new Date().toISOString(),
         }));
 
