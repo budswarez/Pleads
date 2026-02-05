@@ -157,6 +157,25 @@ const useStore = create(
                 }
             },
 
+            // Remove leads for a specific category in the current location
+            removeLeadsByCategory: (categoryId) => {
+                const { selectedState, selectedCity, leads } = get();
+
+                if (!selectedState || !selectedCity) return;
+
+                const filteredLeads = leads.filter(lead => {
+                    const cityMatch = lead.city?.toLowerCase() === selectedCity.toLowerCase();
+                    const stateMatch = lead.state?.toLowerCase() === selectedState.toLowerCase();
+                    const categoryMatch = lead.categoryId === categoryId;
+
+                    // Keep the lead if it's NOT in the current location OR if it's NOT the target category
+                    // i.e. Remove only matches of (Location AND Category)
+                    return !(cityMatch && stateMatch && categoryMatch);
+                });
+
+                set({ leads: filteredLeads });
+            },
+
             // Update lead status
             updateLeadStatus: (placeId, status) => {
                 set(prevState => ({

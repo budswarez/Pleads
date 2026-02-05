@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { MapPin, Phone, MessageCircle, ExternalLink, Search, Settings, Loader2, Square, Plus, Trash2, Palette, X, Globe, Star, StarHalf } from 'lucide-react';
+import { MapPin, Phone, MessageCircle, ExternalLink, Search, Settings, Loader2, Square, Plus, Trash2, Palette, X, Globe, Star, StarHalf, ChevronDown } from 'lucide-react';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
 import SettingsModal from './components/SettingsModal';
@@ -226,6 +226,7 @@ function App() {
   const [searchStatus, setSearchStatus] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [activeStatus, setActiveStatus] = useState('all');
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const stopSearchRef = useRef(false);
 
   const {
@@ -235,6 +236,7 @@ function App() {
     getFilteredLeads,
     addLeads,
     clearLeads,
+    removeLeadsByCategory,
     updateLeadStatus,
     updateLeadNotes,
     statuses,
@@ -290,7 +292,7 @@ function App() {
     return categoryMatch && statusMatch;
   });
 
-  const handleSearchNewPlaces = async () => {
+  const handleSearchNewPlaces = async (targetCategoryId = null) => {
     if (!selectedState || !selectedCity) {
       alert('Por favor, selecione um estado e uma cidade primeiro.');
       return;
@@ -302,7 +304,11 @@ function App() {
     let totalAdded = 0;
 
     try {
-      for (const cat of categories) {
+      const catsToSearch = targetCategoryId
+        ? categories.filter(c => c.id === targetCategoryId)
+        : categories;
+
+      for (const cat of catsToSearch) {
         if (stopSearchRef.current) break;
 
         let pageToken = null;
@@ -414,8 +420,15 @@ function App() {
   };
 
   const handleClearLeads = () => {
-    if (window.confirm('Tem certeza que deseja limpar todos os leads desta localização?')) {
-      clearLeads(true);
+    if (activeTab === 'all') {
+      if (window.confirm('Tem certeza que deseja limpar todos os leads desta localização?')) {
+        clearLeads(true);
+      }
+    } else {
+      const catLabel = categories.find(c => c.id === activeTab)?.label;
+      if (window.confirm(`Tem certeza que deseja limpar apenas os leads de ${catLabel} desta localização?`)) {
+        removeLeadsByCategory(activeTab);
+      }
     }
   };
 
@@ -489,16 +502,7 @@ function App() {
             )}
 
             <div className="flex gap-4">
-              <button
-                onClick={handleSearchNewPlaces}
-                disabled={isSearching}
-                className="bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-opacity-90 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
-              >
-                {!isSearching && <Search size={20} />}
-                {isSearching ? 'Varredura em Andamento...' : 'Procurar Novos Locais'}
-              </button>
-
-              {isSearching && (
+              {isSearching ? (
                 <button
                   onClick={handleStopSearch}
                   className="bg-destructive text-destructive-foreground px-6 py-3 rounded-md font-medium hover:bg-opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-destructive/20"
@@ -506,6 +510,51 @@ function App() {
                   <Square size={20} fill="currentColor" />
                   Parar Busca
                 </button>
+              ) : (
+                <div className="relative flex shadow-lg shadow-primary/20 rounded-md">
+                  <button
+                    onClick={() => handleSearchNewPlaces(activeTab !== 'all' ? activeTab : null)}
+                    className="bg-primary text-primary-foreground px-4 py-3 rounded-l-md font-medium hover:bg-opacity-90 transition-all flex items-center gap-2 border-r border-primary-foreground/20"
+                  >
+                    <Search size={20} />
+                    {activeTab !== 'all'
+                      ? `Procurar ${categories.find(c => c.id === activeTab)?.label}`
+                      : 'Procurar Novos Locais (Tudo)'}
+                  </button>
+                  <button
+                    onClick={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
+                    className="bg-primary text-primary-foreground px-2 rounded-r-md hover:bg-opacity-90 transition-all"
+                  >
+                    <ChevronDown size={20} />
+                  </button>
+
+                  {isSearchDropdownOpen && (
+                    <div className="absolute top-full mt-2 right-0 w-64 bg-card border border-border rounded-lg shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-100">
+                      <button
+                        onClick={() => {
+                          handleSearchNewPlaces(null);
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-secondary transition-colors text-sm font-medium"
+                      >
+                        Procurar em Todas Categorias
+                      </button>
+                      <div className="h-px bg-border my-1" />
+                      {categories.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            handleSearchNewPlaces(cat.id);
+                            setIsSearchDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-secondary transition-colors text-sm flex items-center gap-2"
+                        >
+                          <span>Procurar {cat.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -523,7 +572,8 @@ function App() {
                   onClick={handleClearLeads}
                   className="text-xs text-destructive hover:underline flex items-center gap-1"
                 >
-                  Limpar Todos
+                  <Trash2 size={12} />
+                  {activeTab === 'all' ? 'Limpar Todos' : `Limpar ${categories.find(c => c.id === activeTab)?.label}`}
                 </button>
               )}
             </div>
@@ -766,7 +816,7 @@ function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
       />
-    </div>
+    </div >
   );
 }
 
