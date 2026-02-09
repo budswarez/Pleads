@@ -24,15 +24,6 @@ const LocationSelector = () => {
         setSelectedCity(newCity || null);
     };
 
-    // Função auxiliar para extrair texto de objetos ou strings
-    const renderLabel = (item) => {
-        if (typeof item === 'object' && item !== null) {
-            // Tenta encontrar uma propriedade de texto comum no seu objeto {locations, leads}
-            return item.name || item.label || item.state || item.city || "Item inválido";
-        }
-        return item;
-    };
-
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* State Selector */}
@@ -50,14 +41,11 @@ const LocationSelector = () => {
                         <option value="">
                             {states.length === 0 ? 'Nenhum estado cadastrado' : 'Selecione...'}
                         </option>
-                        {states.map((state, index) => {
-                            const label = renderLabel(state);
-                            return (
-                                <option key={`state-${index}`} value={label}>
-                                    {label}
-                                </option>
-                            );
-                        })}
+                        {states.map((state) => (
+                            <option key={state} value={state}>
+                                {state}
+                            </option>
+                        ))}
                     </select>
                     <ChevronDown
                         size={16}
@@ -85,14 +73,11 @@ const LocationSelector = () => {
                                     ? 'Nenhuma cidade cadastrada'
                                     : 'Selecione...'}
                         </option>
-                        {cities.map((city, index) => {
-                            const label = renderLabel(city);
-                            return (
-                                <option key={`city-${index}`} value={label}>
-                                    {label}
-                                </option>
-                            );
-                        })}
+                        {cities.map((city) => (
+                            <option key={city} value={city}>
+                                {city}
+                            </option>
+                        ))}
                     </select>
                     <ChevronDown
                         size={16}
