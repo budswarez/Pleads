@@ -1,8 +1,8 @@
 # Guia de Segurança - PLeads
 
-## ⚠️ ATENÇÃO CRÍTICA: Chaves de API Expostas
+## ⚠️ ATENÇÃO: Documentação de Incidente de Segurança
 
-Este projeto teve chaves de API commitadas acidentalmente no repositório Git. Se você é o proprietário deste projeto, **SIGA ESTAS INSTRUÇÕES IMEDIATAMENTE**:
+**NOTA IMPORTANTE**: Este documento registra um incidente de segurança passado onde credenciais foram acidentalmente expostas. **As credenciais listadas abaixo foram REDUZIDAS e devem ter sido ROTACIONADAS**. Se você é o proprietário deste projeto e ainda não rotacionou as chaves, **FAÇA ISSO IMEDIATAMENTE**.
 
 ---
 
@@ -10,7 +10,7 @@ Este projeto teve chaves de API commitadas acidentalmente no repositório Git. S
 
 ### Google Places API Key
 
-**Chave exposta**: `AIzaSyDc31poiNszrOsLsW_EtRafs7nOmLdWzbQ`
+**Padrão de chave exposta**: `AIzaSy...zbQ` (reduzido por segurança)
 
 **Passos para rotacionar**:
 
@@ -27,9 +27,9 @@ Este projeto teve chaves de API commitadas acidentalmente no repositório Git. S
 
 ### Supabase Credentials
 
-**Credenciais expostas**:
-- URL: `https://dtfxsznhynzfjyplfswl.supabase.co`
-- Anon Key: `sb_publishable_s-9jksbTgWuXk8KsT_ACmg_BBdDZh5-`
+**Padrão de credenciais expostas** (reduzido por segurança):
+- URL: `https://[project-id].supabase.co`
+- Anon Key: `sb_publishable_[redacted]`
 
 **Passos para rotacionar**:
 
@@ -319,4 +319,15 @@ Se você encontrou este repositório e identificou credenciais expostas, por fav
 
 ---
 
-**Última atualização**: 2026-02-10
+## Nota sobre Este Arquivo
+
+Este arquivo documenta um incidente de segurança e fornece orientações para prevenir futuros problemas. **As credenciais reais foram reduzidas** para evitar exposição pública.
+
+Se você está documentando um incidente real com credenciais específicas, considere:
+1. Manter este arquivo apenas localmente (adicione `SECURITY.md` ao `.gitignore`)
+2. Ou manter apenas padrões reduzidos como exemplos (como está atualmente)
+3. Nunca commitar credenciais reais, mesmo em documentação
+
+---
+
+**Última atualização**: 2026-02-10 (Credenciais reduzidas para segurança)
