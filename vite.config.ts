@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api/google': {
-        target: 'https://maps.googleapis.com/maps/api',
+        target: 'https://places.googleapis.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/google/, '')
       }

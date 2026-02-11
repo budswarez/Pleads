@@ -89,8 +89,8 @@ export const SUCCESS_MESSAGES = {
  * API Endpoints
  */
 export const API_ENDPOINTS = {
-  GOOGLE_PLACES_SEARCH: '/api/google/search',
-  GOOGLE_PLACES_DETAILS: '/api/google/details'
+  GOOGLE_PLACES_SEARCH: '/api/google/v1/places:searchText',
+  GOOGLE_PLACES_DETAILS: '/api/google/v1/places'
 } as const;
 
 /**

@@ -203,6 +203,7 @@ CREATE TABLE IF NOT EXISTS locations (
     id BIGSERIAL PRIMARY KEY,
     city TEXT NOT NULL,
     state TEXT NOT NULL,
+    neighborhoods JSONB DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(city, state)
 );
@@ -442,7 +443,7 @@ export async function fetchLocations(): Promise<SupabaseResult<Location[]>> {
  * @param state - State abbreviation
  * @returns Result with data and error
  */
-export async function upsertLocation(city: string, state: string): Promise<SupabaseResult> {
+export async function upsertLocation(city: string, state: string, neighborhoods: string[] = []): Promise<SupabaseResult> {
   const client = getSupabase();
   if (!client) {
     return { error: ERROR_MESSAGES.SUPABASE_NOT_INITIALIZED };
@@ -450,7 +451,7 @@ export async function upsertLocation(city: string, state: string): Promise<Supab
 
   const { data, error } = await client
     .from(SUPABASE_TABLES.LOCATIONS)
-    .upsert({ city, state }, { onConflict: 'city,state' });
+    .upsert({ city, state, neighborhoods }, { onConflict: 'city,state' });
 
   return { data, error };
 }
@@ -647,7 +648,7 @@ export async function syncAllData(localData: {
     if (localData.locations && localData.locations.length > 0) {
       let locationsError: any = null;
       for (const loc of localData.locations) {
-        const result = await upsertLocation(loc.city, loc.state);
+        const result = await upsertLocation(loc.city, loc.state, loc.neighborhoods || []);
         if (result.error) {
           locationsError = result.error;
           break; // Stop on first error

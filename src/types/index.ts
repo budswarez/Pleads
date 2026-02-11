@@ -9,6 +9,7 @@ export interface Location {
   id: number;
   city: string;
   state: string;
+  neighborhoods: string[];
 }
 
 /**
@@ -70,7 +71,7 @@ export interface StoreState {
   // Selection
   selectedState: string | null;
   selectedCity: string | null;
-  selectedNeighborhood: string;
+  selectedNeighborhoods: string[];
 
   // Configuration
   apiKey: string;
@@ -99,7 +100,11 @@ export interface StoreState {
   // Selection Methods
   setSelectedState: (state: string | null) => void;
   setSelectedCity: (city: string | null) => void;
-  setSelectedNeighborhood: (neighborhood: string) => void;
+  setSelectedNeighborhoods: (neighborhoods: string[]) => void;
+
+  // Neighborhood Management Methods
+  updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => void;
+  getNeighborhoodsByLocation: (city: string, state: string) => string[];
 
   // Status Management Methods
   addStatus: (label: string, color: string) => void;
@@ -238,7 +243,7 @@ export interface UseSearchReturn {
   handleSearch: (
     selectedState: string,
     selectedCity: string,
-    selectedNeighborhood: string,
+    selectedNeighborhoods: string[],
     categories: Category[],
     apiKey: string,
     maxLeadsPerCategory: number

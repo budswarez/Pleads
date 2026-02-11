@@ -5,6 +5,77 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.1.0] - 2026-02-11
+
+### ✨ Novas Funcionalidades
+
+#### Migração para Google Places API (New)
+- Migração completa da API Legacy (`maps.googleapis.com`) para a API New (`places.googleapis.com/v1`)
+- Requisições agora usam método POST com body JSON ao invés de query parameters
+- Autenticação via headers `X-Goog-Api-Key` e `X-Goog-FieldMask` (mais seguro)
+- Campo `nextPageToken` adicionado ao field mask para paginação funcional
+- Proxy do Vite atualizado para o novo endpoint
+
+#### Busca Automática de Bairros
+- Nova função `fetchNeighborhoods()` em `placesService.ts`
+- Busca bairros automaticamente via Google Places Text Search (`"bairros de {cidade}, {estado}, Brasil"`)
+- Suporte a paginação para capturar o máximo de bairros possível
+- Bairros ficam salvos na Location e persistidos no Zustand + Supabase
+
+#### Gestão de Bairros (LocationManagementModal)
+- Botão "Buscar Bairros" (ícone Search) em cada cidade cadastrada
+- Cards expansíveis com lista de bairros como tags/chips
+- Adição manual de bairros via input de texto
+- Remoção individual de bairros (botão X em cada tag)
+- Indicador de quantidade: "(12 bairros)"
+- Estado de loading com spinner durante busca na API
+
+#### Seleção Múltipla de Bairros (LocationSelector)
+- Dropdown customizado com checkboxes substituindo o input de texto
+- Botões "Selecionar todos" e "Limpar"
+- Label dinâmico: "3 bairros selecionados", "Todos (cidade inteira)"
+- Fecha automaticamente ao clicar fora (click outside)
+- Em branco = busca na cidade toda (comportamento padrão)
+
+#### Varredura por Bairros
+- Hook `useSearch` reescrito com função auxiliar `searchCategoryInArea()`
+- Itera por cada bairro selecionado, gerando queries separadas por bairro
+- Deduplicação por `place_id` entre bairros diferentes (usando `Set`)
+- Respeita `maxLeadsPerCategory` total (não por bairro)
+- Status de busca mostra progresso: `"Restaurantes - Centro: 15/60 leads"`
+- Multiplicação de resultados: ~60 leads/bairro ao invés de ~60 total
+
+### 🐛 Correções
+
+- **Paginação não funcionava**: `nextPageToken` estava ausente do `X-Goog-FieldMask`, impedindo a API de retornar o token de próxima página
+- **RLS bloqueando sync**: Criadas políticas de acesso público (`true`) para todas as 4 tabelas no Supabase após ativação do Row-Level Security
+
+### 🔧 Configuração
+
+#### Vite Proxy
+- Target atualizado de `https://maps.googleapis.com` para `https://places.googleapis.com`
+- Rewrite path simplificado: `/api/google` → raiz
+
+#### Supabase Schema
+- Nova coluna `neighborhoods JSONB DEFAULT '[]'::jsonb` na tabela `locations`
+- `upsertLocation()` atualizado para incluir neighborhoods
+- CREATE TABLE SQL atualizado para novos setups
+
+### 🔄 Mudanças de Compatibilidade
+
+- **Google Places API (New)** deve estar habilitada no Google Cloud Console (separada da Legacy)
+- Field mask controla **todos** os campos retornados, incluindo `nextPageToken`
+- Respostas usam nomes diferentes: `displayName.text`, `nationalPhoneNumber`, `websiteUri`, etc.
+- `getPlaceDetails` agora só é chamado quando phone E website estão ausentes (otimização de custo)
+
+### 📊 Estatísticas
+
+- **41 testes passando** (27 store + 14 services)
+- Testes de `placesService` reescritos para formato da API New
+- Novo teste para `fetchNeighborhoods`
+
+---
+
 ## [2.0.0] - 2026-02-10
 
 ### 🔒 Segurança
@@ -281,6 +352,7 @@ CHANGELOG.md (novo)
 - [ ] Dark mode toggle
 - [ ] Exportação de leads para CSV/Excel
 - [ ] Analytics e tracking de uso
+- [x] ~~Busca por bairros para multiplicar resultados~~ (implementado em 2.1.0)
 
 ---
 

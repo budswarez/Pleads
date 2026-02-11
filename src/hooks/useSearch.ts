@@ -20,10 +20,93 @@ export const useSearch = () => {
   };
 
   /**
+   * Busca leads para uma categoria em um bairro específico (ou cidade toda),
+   * com paginação e enriquecimento de detalhes.
+   */
+  const searchCategoryInArea = async (
+    selectedCity: string,
+    selectedState: string,
+    cat: Category,
+    neighborhood: string | null,
+    apiKey: string,
+    maxLeads: number,
+    seenPlaceIds: Set<string>
+  ): Promise<{ leads: Lead[]; found: number }> => {
+    let pageToken: string | null = null;
+    let count = 0;
+    const leads: Lead[] = [];
+    let found = 0;
+
+    const areaLabel = neighborhood ? `${cat.label} - ${neighborhood}` : cat.label;
+
+    do {
+      if (stopSearchRef.current) break;
+
+      const { results, nextPageToken } = await searchPlaces(
+        selectedCity,
+        selectedState,
+        cat.query,
+        pageToken,
+        apiKey,
+        neighborhood
+      );
+
+      found += results.length;
+
+      for (const lead of results) {
+        if (stopSearchRef.current) break;
+        if (count >= maxLeads) break;
+
+        // Deduplicar por place_id (entre bairros diferentes)
+        if (seenPlaceIds.has(lead.place_id)) continue;
+        seenPlaceIds.add(lead.place_id);
+
+        let enrichedLead: Lead = {
+          ...lead,
+          category: cat.label,
+          categoryId: cat.id,
+          city: selectedCity,
+          state: selectedState,
+        };
+
+        // A API New já retorna phone/website no Text Search.
+        // Só buscar detalhes se ambos estiverem faltando.
+        if (!lead.phone && !lead.website) {
+          try {
+            const details = await getPlaceDetails(lead.place_id, apiKey);
+            enrichedLead = {
+              ...enrichedLead,
+              phone: details.formatted_phone_number || enrichedLead.phone,
+              website: details.website || enrichedLead.website,
+            };
+          } catch (error) {
+            console.warn(`Failed to get details for ${lead.name}:`, error);
+          }
+        }
+
+        leads.push(enrichedLead);
+        count++;
+
+        setSearchStatus(`${areaLabel}: ${count}/${maxLeads} leads`);
+      }
+
+      if (count >= maxLeads) break;
+
+      pageToken = nextPageToken;
+
+      if (pageToken && !stopSearchRef.current) {
+        await sleep(PAGINATION_DELAY_MS);
+      }
+    } while (pageToken && !stopSearchRef.current && count < maxLeads);
+
+    return { leads, found };
+  };
+
+  /**
    * Realiza a busca de leads nas categorias especificadas
    * @param selectedState - Estado selecionado (UF)
    * @param selectedCity - Cidade selecionada
-   * @param selectedNeighborhood - Bairro selecionado (opcional)
+   * @param selectedNeighborhoods - Bairros selecionados (vazio = cidade toda)
    * @param categories - Lista de categorias para buscar
    * @param apiKey - Chave da API do Google Places
    * @param maxLeadsPerCategory - Número máximo de leads por categoria
@@ -33,7 +116,7 @@ export const useSearch = () => {
   const handleSearch = async (
     selectedState: string,
     selectedCity: string,
-    selectedNeighborhood: string,
+    selectedNeighborhoods: string[],
     categories: Category[],
     apiKey: string,
     maxLeadsPerCategory: number,
@@ -62,91 +145,47 @@ export const useSearch = () => {
         ? categories.filter(c => c.id === targetCategoryId)
         : categories;
 
+      // Determinar áreas de busca: bairros selecionados ou cidade toda
+      const areas: (string | null)[] = selectedNeighborhoods.length > 0
+        ? selectedNeighborhoods
+        : [null]; // null = cidade inteira
+
       // Buscar em cada categoria
       for (const cat of catsToSearch) {
         if (stopSearchRef.current) break;
 
-        let pageToken: string | null = null;
-        let categoryLeadsCount = 0;
         const categoryLeads: Lead[] = [];
+        const seenPlaceIds = new Set<string>();
 
         setSearchStatus(`Buscando ${cat.label}...`);
 
-        // Loop de paginação
-        do {
+        // Iterar por cada área (bairro ou cidade toda)
+        for (const area of areas) {
           if (stopSearchRef.current) break;
+          if (categoryLeads.length >= maxLeadsPerCategory) break;
 
-          // Buscar página de resultados
-          const { results, nextPageToken } = await searchPlaces(
+          const remaining = maxLeadsPerCategory - categoryLeads.length;
+
+          const { leads, found } = await searchCategoryInArea(
             selectedCity,
             selectedState,
-            cat.query,
-            pageToken,
+            cat,
+            area,
             apiKey,
-            selectedNeighborhood || null
+            remaining,
+            seenPlaceIds
           );
 
-          totalFound += results.length;
+          categoryLeads.push(...leads);
+          totalFound += found;
 
-          // Enriquecer resultados com detalhes (telefone, website)
-          for (const lead of results) {
-            if (stopSearchRef.current) break;
-            if (categoryLeadsCount >= maxLeadsPerCategory) break;
-
-            try {
-              // Buscar detalhes adicionais
-              const details = await getPlaceDetails(lead.place_id, apiKey);
-
-              // Mesclar detalhes com lead básico
-              const enrichedLead: Lead = {
-                ...lead,
-                phone: details.formatted_phone_number || lead.phone,
-                website: details.website || lead.website,
-                category: cat.label,
-                categoryId: cat.id,
-                city: selectedCity,
-                state: selectedState
-              };
-
-              categoryLeads.push(enrichedLead);
-              categoryLeadsCount++;
-              totalAdded++;
-            } catch (error) {
-              console.warn(`Failed to get details for ${lead.name}:`, error);
-              // Ainda adiciona o lead sem os detalhes completos
-              const basicLead: Lead = {
-                ...lead,
-                category: cat.label,
-                categoryId: cat.id,
-                city: selectedCity,
-                state: selectedState
-              };
-
-              categoryLeads.push(basicLead);
-              categoryLeadsCount++;
-              totalAdded++;
-            }
-
-            setSearchStatus(
-              `${cat.label}: ${categoryLeadsCount}/${maxLeadsPerCategory} leads`
-            );
+          // Delay entre bairros
+          if (area !== areas[areas.length - 1] && !stopSearchRef.current) {
+            await sleep(500);
           }
+        }
 
-          // Verificar se atingiu limite da categoria
-          if (categoryLeadsCount >= maxLeadsPerCategory) {
-            break;
-          }
-
-          // Preparar próxima página
-          pageToken = nextPageToken;
-
-          // Delay obrigatório entre páginas (política do Google)
-          if (pageToken && !stopSearchRef.current) {
-            await sleep(PAGINATION_DELAY_MS);
-          }
-        } while (pageToken && !stopSearchRef.current && categoryLeadsCount < maxLeadsPerCategory);
-
-        // Adicionar leads desta categoria ao resultado final
+        totalAdded += categoryLeads.length;
         allNewLeads.push(...categoryLeads);
 
         // Delay entre categorias
@@ -173,7 +212,7 @@ export const useSearch = () => {
       console.error('Error during search:', error);
       return {
         success: false,
-        newLeads: allNewLeads, // Retorna os que foram adicionados até o erro
+        newLeads: allNewLeads,
         message: `Erro ao realizar varredura: ${error instanceof Error ? error.message : String(error)}`,
         wasStopped: false
       };

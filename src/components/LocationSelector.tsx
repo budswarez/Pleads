@@ -1,35 +1,75 @@
-import { ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Check } from 'lucide-react';
 import useStore from '../store/useStore';
 
 /**
- * Componente para seleção de localização (Estado, Cidade, Bairro)
- * Permite filtrar os leads por localização
+ * Componente para seleção de localização (Estado, Cidade, Bairros)
+ * Permite filtrar os leads por localização e selecionar múltiplos bairros
  */
 const LocationSelector = () => {
   const {
     selectedState,
     selectedCity,
+    selectedNeighborhoods,
     setSelectedState,
     setSelectedCity,
+    setSelectedNeighborhoods,
     getStates,
-    getCitiesByState
+    getCitiesByState,
+    getNeighborhoodsByLocation
   } = useStore();
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const states = getStates();
   const cities = selectedState ? getCitiesByState(selectedState) : [];
+  const neighborhoods = (selectedState && selectedCity)
+    ? getNeighborhoodsByLocation(selectedCity, selectedState)
+    : [];
 
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newState = e.target.value;
-    setSelectedState(newState || null);
+    setSelectedState(e.target.value || null);
   };
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newCity = e.target.value;
-    setSelectedCity(newCity || null);
+    setSelectedCity(e.target.value || null);
   };
 
-  const handleNeighborhoodChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    useStore.getState().setSelectedNeighborhood(e.target.value);
+  const toggleNeighborhood = (neighborhood: string) => {
+    const isSelected = selectedNeighborhoods.includes(neighborhood);
+    if (isSelected) {
+      setSelectedNeighborhoods(selectedNeighborhoods.filter(n => n !== neighborhood));
+    } else {
+      setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood]);
+    }
+  };
+
+  const selectAll = () => {
+    setSelectedNeighborhoods([...neighborhoods]);
+  };
+
+  const clearSelection = () => {
+    setSelectedNeighborhoods([]);
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getDropdownLabel = () => {
+    if (!selectedCity) return 'Selecione uma cidade primeiro';
+    if (neighborhoods.length === 0) return 'Nenhum bairro cadastrado';
+    if (selectedNeighborhoods.length === 0) return 'Todos (cidade inteira)';
+    if (selectedNeighborhoods.length === 1) return selectedNeighborhoods[0];
+    return `${selectedNeighborhoods.length} bairros selecionados`;
   };
 
   return (
@@ -106,27 +146,78 @@ const LocationSelector = () => {
         </div>
       </div>
 
-      {/* Neighborhood Input */}
-      <div className="md:col-span-2">
-        <label
-          htmlFor="neighborhood-input"
-          className="block text-sm font-medium text-muted-foreground mb-2"
-        >
-          Bairro (Opcional)
+      {/* Neighborhood Multi-Select */}
+      <div className="md:col-span-2" ref={dropdownRef}>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
+          Bairros (Opcional)
         </label>
         <div className="relative">
-          <input
-            id="neighborhood-input"
-            type="text"
-            placeholder="Ex: Savassi, Centro, etc."
-            className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-muted-foreground/50"
-            onChange={handleNeighborhoodChange}
-            disabled={!selectedCity}
-            aria-label="Bairro (Opcional)"
+          <button
+            type="button"
+            onClick={() => {
+              if (selectedCity && neighborhoods.length > 0) {
+                setIsDropdownOpen(!isDropdownOpen);
+              }
+            }}
+            disabled={!selectedCity || neighborhoods.length === 0}
+            className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 pr-10 text-sm text-left focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Selecionar bairros"
+          >
+            <span className={!selectedCity || neighborhoods.length === 0 || selectedNeighborhoods.length === 0 ? 'text-muted-foreground/50' : ''}>
+              {getDropdownLabel()}
+            </span>
+          </button>
+          <ChevronDown
+            size={16}
+            className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+            aria-hidden="true"
           />
+
+          {/* Dropdown */}
+          {isDropdownOpen && neighborhoods.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+              {/* Select all / Clear */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Selecionar todos
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Limpar
+                </button>
+              </div>
+
+              {/* Options */}
+              {neighborhoods.map((neighborhood) => {
+                const isSelected = selectedNeighborhoods.includes(neighborhood);
+                return (
+                  <button
+                    key={neighborhood}
+                    type="button"
+                    onClick={() => toggleNeighborhood(neighborhood)}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50 transition-colors text-left"
+                  >
+                    <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
+                      {isSelected && <Check size={10} className="text-primary-foreground" />}
+                    </div>
+                    {neighborhood}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
         <p className="text-[10px] text-muted-foreground mt-1">
-          Digite um bairro para refinar a busca. Deixe em branco para buscar em toda a cidade.
+          {neighborhoods.length > 0
+            ? 'Selecione bairros para refinar a busca. Deixe em branco para buscar em toda a cidade.'
+            : 'Cadastre bairros na Gestão de Locais para poder selecioná-los aqui.'}
         </p>
       </div>
     </div>

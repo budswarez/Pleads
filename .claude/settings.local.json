@@ -10,7 +10,8 @@
       "Bash(npm run dev:*)",
       "Bash(cmd //c taskkill //F //PID 52240)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

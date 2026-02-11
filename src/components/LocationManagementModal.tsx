@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { MapPin, X, Trash2 } from 'lucide-react';
+import { MapPin, X, Trash2, Search, Plus, Loader2 } from 'lucide-react';
 import useStore from '../store/useStore';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { fetchNeighborhoods } from '../services/placesService';
 
 interface LocationManagementModalProps {
   isOpen: boolean;
@@ -10,14 +11,17 @@ interface LocationManagementModalProps {
 }
 
 /**
- * Modal para gerenciar localizações (Cidade + Estado)
+ * Modal para gerenciar localizações (Cidade + Estado) e seus bairros
  * Permite adicionar e remover locais para busca de leads
  */
 const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalProps) => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [loadingLocationId, setLoadingLocationId] = useState<number | null>(null);
+  const [newNeighborhood, setNewNeighborhood] = useState<Record<number, string>>({});
+  const [expandedLocationId, setExpandedLocationId] = useState<number | null>(null);
 
-  const { locations, addLocation, removeLocation } = useStore();
+  const { locations, addLocation, removeLocation, updateLocationNeighborhoods, getApiKey } = useStore();
 
   const handleAddLocation = () => {
     if (!city.trim() || !state.trim()) {
@@ -39,6 +43,58 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
     if (e.key === 'Enter') {
       handleAddLocation();
     }
+  };
+
+  const handleFetchNeighborhoods = async (location: typeof locations[0]) => {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      toast.error('Configure a API Key do Google Places primeiro.');
+      return;
+    }
+
+    setLoadingLocationId(location.id);
+    try {
+      const neighborhoods = await fetchNeighborhoods(location.city, location.state, apiKey);
+      if (neighborhoods.length === 0) {
+        toast('Nenhum bairro encontrado para esta cidade.', { icon: 'ℹ️' });
+      } else {
+        // Merge with existing neighborhoods (don't lose manually added ones)
+        const existing = location.neighborhoods || [];
+        const merged = [...new Set([...existing, ...neighborhoods])].sort();
+        updateLocationNeighborhoods(location.id, merged);
+        toast.success(`${neighborhoods.length} bairros encontrados!`);
+      }
+      setExpandedLocationId(location.id);
+    } catch (error) {
+      toast.error(`Erro ao buscar bairros: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setLoadingLocationId(null);
+    }
+  };
+
+  const handleAddNeighborhood = (locationId: number) => {
+    const name = newNeighborhood[locationId]?.trim();
+    if (!name) return;
+
+    const location = locations.find(l => l.id === locationId);
+    if (!location) return;
+
+    const existing = location.neighborhoods || [];
+    if (existing.some(n => n.toLowerCase() === name.toLowerCase())) {
+      toast.error('Este bairro já foi cadastrado');
+      return;
+    }
+
+    updateLocationNeighborhoods(locationId, [...existing, name].sort());
+    setNewNeighborhood(prev => ({ ...prev, [locationId]: '' }));
+  };
+
+  const handleRemoveNeighborhood = (locationId: number, neighborhood: string) => {
+    const location = locations.find(l => l.id === locationId);
+    if (!location) return;
+
+    const updated = (location.neighborhoods || []).filter(n => n !== neighborhood);
+    updateLocationNeighborhoods(locationId, updated);
   };
 
   // Close modal on Escape key
@@ -67,7 +123,7 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1">
           <p className="text-muted-foreground mb-4 text-sm">
-            Cadastre cidades e estados para realizar a varredura de leads.
+            Cadastre cidades e estados para realizar a varredura de leads. Use "Buscar Bairros" para descobrir bairros automaticamente.
           </p>
 
           {/* Add Location Form */}
@@ -129,29 +185,110 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 Locais Cadastrados ({locations.length})
               </h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {locations.map((location) => (
-                  <div
-                    key={location.id}
-                    className="flex items-center justify-between bg-secondary/50 rounded-md px-4 py-3 border border-border"
-                  >
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-primary" />
-                      <span className="text-sm font-medium text-foreground">
-                        {location.city}, {location.state}
-                      </span>
-                    </div>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {locations.map((location) => {
+                  const neighborhoods = location.neighborhoods || [];
+                  const isExpanded = expandedLocationId === location.id;
+                  const isLoading = loadingLocationId === location.id;
 
-                    <button
-                      onClick={() => removeLocation(location.id)}
-                      className="text-destructive hover:bg-destructive/10 p-1 rounded transition-colors"
-                      title={`Remover ${location.city}, ${location.state}`}
-                      aria-label={`Remover ${location.city}, ${location.state}`}
+                  return (
+                    <div
+                      key={location.id}
+                      className="bg-secondary/50 rounded-md border border-border"
                     >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
+                      {/* Location header */}
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <button
+                          className="flex items-center gap-2 flex-1 text-left"
+                          onClick={() => setExpandedLocationId(isExpanded ? null : location.id)}
+                        >
+                          <MapPin size={16} className="text-primary flex-shrink-0" />
+                          <span className="text-sm font-medium text-foreground">
+                            {location.city}, {location.state}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({neighborhoods.length} bairros)
+                          </span>
+                        </button>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleFetchNeighborhoods(location)}
+                            disabled={isLoading}
+                            className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors disabled:opacity-50"
+                            title="Buscar bairros via Google Places"
+                            aria-label={`Buscar bairros de ${location.city}`}
+                          >
+                            {isLoading ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Search size={14} />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => removeLocation(location.id)}
+                            className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
+                            title={`Remover ${location.city}, ${location.state}`}
+                            aria-label={`Remover ${location.city}, ${location.state}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Expanded: neighborhoods */}
+                      {isExpanded && (
+                        <div className="px-4 pb-3 border-t border-border/50 pt-3">
+                          {/* Add neighborhood input */}
+                          <div className="flex gap-2 mb-2">
+                            <input
+                              type="text"
+                              placeholder="Adicionar bairro..."
+                              className="flex-1 bg-input text-foreground border border-input rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                              value={newNeighborhood[location.id] || ''}
+                              onChange={(e) => setNewNeighborhood(prev => ({ ...prev, [location.id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleAddNeighborhood(location.id);
+                              }}
+                            />
+                            <button
+                              onClick={() => handleAddNeighborhood(location.id)}
+                              className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs hover:bg-opacity-90 transition-colors"
+                              aria-label="Adicionar bairro"
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+
+                          {/* Neighborhoods list */}
+                          {neighborhoods.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {neighborhoods.map((neighborhood) => (
+                                <span
+                                  key={neighborhood}
+                                  className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                                >
+                                  {neighborhood}
+                                  <button
+                                    onClick={() => handleRemoveNeighborhood(location.id, neighborhood)}
+                                    className="hover:text-destructive transition-colors"
+                                    aria-label={`Remover ${neighborhood}`}
+                                  >
+                                    <X size={10} />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Nenhum bairro cadastrado. Clique em <Search size={10} className="inline" /> para buscar automaticamente.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (

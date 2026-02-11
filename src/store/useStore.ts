@@ -16,7 +16,7 @@ const useStore = create<StoreState>()(
       // Selected location for filtering
       selectedState: null,
       selectedCity: null,
-      selectedNeighborhood: '',
+      selectedNeighborhoods: [],
 
       // Dynamic Lead Statuses
       statuses: [...DEFAULT_STATUSES],
@@ -113,13 +113,13 @@ const useStore = create<StoreState>()(
 
         if (!exists) {
           set(prevState => ({
-            locations: [...prevState.locations, { city, state, id: Date.now() }]
+            locations: [...prevState.locations, { city, state, id: Date.now(), neighborhoods: [] }]
           }));
 
           // Auto-sync to Supabase if connected
           const { supabaseConnected } = get();
           if (supabaseConnected && getSupabase()) {
-            upsertLocation(city, state).catch(err =>
+            upsertLocation(city, state, []).catch(err =>
               console.error('[Auto-sync] Failed to sync location:', err)
             );
           }
@@ -239,17 +239,44 @@ const useStore = create<StoreState>()(
 
       // Set selected state
       setSelectedState: (state: string | null) => {
-        set({ selectedState: state, selectedCity: null, selectedNeighborhood: '' });
+        set({ selectedState: state, selectedCity: null, selectedNeighborhoods: [] });
       },
 
       // Set selected city
       setSelectedCity: (city: string | null) => {
-        set({ selectedCity: city, selectedNeighborhood: '' });
+        set({ selectedCity: city, selectedNeighborhoods: [] });
       },
 
-      // Set selected neighborhood
-      setSelectedNeighborhood: (neighborhood: string) => {
-        set({ selectedNeighborhood: neighborhood });
+      // Set selected neighborhoods
+      setSelectedNeighborhoods: (neighborhoods: string[]) => {
+        set({ selectedNeighborhoods: neighborhoods });
+      },
+
+      // Update neighborhoods for a location
+      updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => {
+        set(prevState => ({
+          locations: prevState.locations.map(loc =>
+            loc.id === locationId ? { ...loc, neighborhoods } : loc
+          )
+        }));
+
+        // Auto-sync to Supabase if connected
+        const { supabaseConnected } = get();
+        const location = get().locations.find(loc => loc.id === locationId);
+        if (supabaseConnected && getSupabase() && location) {
+          upsertLocation(location.city, location.state, neighborhoods).catch(err =>
+            console.error('[Auto-sync] Failed to sync location neighborhoods:', err)
+          );
+        }
+      },
+
+      // Get neighborhoods for a specific city/state
+      getNeighborhoodsByLocation: (city: string, state: string): string[] => {
+        const location = get().locations.find(
+          loc => loc.city.toLowerCase() === city.toLowerCase() &&
+            loc.state.toLowerCase() === state.toLowerCase()
+        );
+        return location?.neighborhoods || [];
       },
 
       // Get unique list of states from locations

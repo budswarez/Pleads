@@ -33,7 +33,7 @@ function App() {
   const {
     selectedState,
     selectedCity,
-    selectedNeighborhood,
+    selectedNeighborhoods,
     getFilteredLeads,
     addLeads,
     clearLeads,
@@ -102,7 +102,7 @@ function App() {
     const result = await handleSearch(
       selectedState,
       selectedCity,
-      selectedNeighborhood,
+      selectedNeighborhoods,
       categories,
       getApiKey(),
       maxLeadsPerCategory,
