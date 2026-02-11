@@ -2,7 +2,7 @@
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 
-**Features**: Google Places API (New) • Auto-fetch neighborhoods • Multi-select search by neighborhood • Auto-sync with Supabase • TypeScript strict mode • 41 automated tests • Toast notifications • Keyboard navigation
+**Features**: Authentication (Admin/User) • Google Places API (New) • Auto-fetch neighborhoods • Multi-select search by neighborhood • Auto-sync with Supabase • TypeScript strict mode • 41 automated tests • Toast notifications • Keyboard navigation
 
 ## Prerequisites
 
@@ -94,16 +94,22 @@ The built files will be in the `dist` directory.
    - **anon public**: `VITE_SUPABASE_ANON_KEY`
    - **⚠️ NÃO use a service_role key** (ela tem acesso total ao banco)
 
-### Configurar Row-Level Security no Supabase (CRÍTICO)
+### Configurar Banco de Dados no Supabase
 
-Para proteger seus dados, você DEVE habilitar Row-Level Security:
+O sistema usa **Supabase Auth** com dois papéis: **Admin** (gerencia usuários) e **Usuário** (usa a ferramenta).
 
-1. No Supabase Dashboard, vá para **SQL Editor**
-2. Execute o seguinte SQL para criar as tabelas com RLS:
+**Pré-requisitos no Supabase Dashboard:**
+- **Auth > Settings > Email Auth**: "Confirm email" → **OFF**
+- **Auth > Rate Limits**: Aumente "Rate limit for sending emails" se necessário (ex: 30/hora)
+
+No **SQL Editor**, execute o SQL completo abaixo:
 
 ```sql
--- Criar tabelas com RLS habilitado
-CREATE TABLE leads (
+-- =============================================
+-- 1. TABELAS DE DADOS
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS leads (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   place_id TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
@@ -118,49 +124,194 @@ CREATE TABLE leads (
   user_ratings_total INTEGER,
   status TEXT DEFAULT 'NEW',
   notes JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE locations (
+CREATE TABLE IF NOT EXISTS locations (
   id SERIAL PRIMARY KEY,
   city TEXT NOT NULL,
   state TEXT NOT NULL,
   neighborhoods JSONB DEFAULT '[]'::jsonb,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(city, state)
 );
 
 ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE categories (
+CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   query TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 
-CREATE TABLE statuses (
+CREATE TABLE IF NOT EXISTS statuses (
   id TEXT PRIMARY KEY,
   label TEXT NOT NULL,
   color TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE statuses ENABLE ROW LEVEL SECURITY;
 
--- Criar políticas de acesso público (ajuste conforme necessário)
-CREATE POLICY "Allow public access" ON leads FOR ALL USING (true);
-CREATE POLICY "Allow public access" ON locations FOR ALL USING (true);
-CREATE POLICY "Allow public access" ON categories FOR ALL USING (true);
-CREATE POLICY "Allow public access" ON statuses FOR ALL USING (true);
-```
+-- =============================================
+-- 2. TABELA DE PERFIS DE USUÁRIO (AUTENTICAÇÃO)
+-- =============================================
 
-**Nota**: O exemplo acima usa políticas públicas. Para produção, implemente autenticação e restrinja o acesso por `user_id`.
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+
+-- =============================================
+-- 3. FUNÇÕES AUXILIARES (SECURITY DEFINER)
+-- =============================================
+
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION has_any_users()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM user_profiles);
+$$;
+
+CREATE OR REPLACE FUNCTION is_setup_complete()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT EXISTS (SELECT 1 FROM public.user_profiles WHERE role = 'admin');
+$$;
+
+-- =============================================
+-- 4. POLÍTICAS RLS
+-- =============================================
+
+-- Tabelas de dados: apenas usuários autenticados
+CREATE POLICY "Allow authenticated access" ON leads
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated access" ON locations
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated access" ON categories
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated access" ON statuses
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- user_profiles: sem recursão (usa funções SECURITY DEFINER)
+CREATE POLICY "Users can read own profile" ON user_profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Admins can read all profiles" ON user_profiles
+  FOR SELECT USING (is_admin());
+
+CREATE POLICY "Allow profile insert" ON user_profiles
+  FOR INSERT WITH CHECK (NOT has_any_users() OR is_admin());
+
+CREATE POLICY "Admins can delete profiles" ON user_profiles
+  FOR DELETE USING (is_admin());
+
+-- =============================================
+-- 5. RPCs DE AUTENTICAÇÃO
+-- =============================================
+
+-- Setup do primeiro admin (tela de configuração inicial)
+CREATE OR REPLACE FUNCTION setup_first_admin(
+  p_user_id UUID, p_email TEXT, p_name TEXT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.user_profiles WHERE role = 'admin') THEN
+    RETURN json_build_object('success', false, 'error', 'Um administrador já existe');
+  END IF;
+  UPDATE auth.users SET email_confirmed_at = NOW()
+  WHERE id = p_user_id AND email_confirmed_at IS NULL;
+  INSERT INTO public.user_profiles (id, email, name, role)
+  VALUES (p_user_id, p_email, p_name, 'admin')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN json_build_object('success', true);
+END;
+$$;
+
+-- Admin confirma email e cria perfil de novo usuário
+CREATE OR REPLACE FUNCTION admin_confirm_and_create_profile(
+  p_user_id UUID, p_email TEXT, p_name TEXT
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_profiles WHERE id = auth.uid() AND role = 'admin'
+  ) THEN
+    RETURN json_build_object('success', false, 'error', 'Apenas administradores podem criar usuários');
+  END IF;
+  UPDATE auth.users SET email_confirmed_at = NOW()
+  WHERE id = p_user_id AND email_confirmed_at IS NULL;
+  INSERT INTO public.user_profiles (id, email, name, role)
+  VALUES (p_user_id, p_email, p_name, 'user')
+  ON CONFLICT (id) DO NOTHING;
+  RETURN json_build_object('success', true);
+END;
+$$;
+
+-- Admin deleta usuário
+CREATE OR REPLACE FUNCTION admin_delete_user(p_user_id UUID)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_profiles WHERE id = auth.uid() AND role = 'admin'
+  ) THEN
+    RETURN json_build_object('success', false, 'error', 'Apenas administradores podem remover usuários');
+  END IF;
+  IF p_user_id = auth.uid() THEN
+    RETURN json_build_object('success', false, 'error', 'Você não pode remover seu próprio usuário');
+  END IF;
+  DELETE FROM public.user_profiles WHERE id = p_user_id;
+  DELETE FROM auth.users WHERE id = p_user_id;
+  RETURN json_build_object('success', true);
+END;
+$$;
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_leads_city_state ON leads(city, state);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+CREATE INDEX IF NOT EXISTS idx_leads_place_id ON leads(place_id);
+```
 
 ---
 
@@ -275,10 +426,26 @@ O sistema maximiza a captação de leads buscando por bairros individuais:
 - **Deduplicação Inteligente** - Resultados duplicados entre bairros são removidos por `place_id`
 - **Multiplicação de Resultados** - Cada bairro gera uma query separada, multiplicando os leads encontrados (~60/bairro vs ~60/cidade)
 
+### 🔐 Sistema de Autenticação
+
+O sistema possui autenticação integrada via **Supabase Auth** com dois papéis:
+
+- **Admin**: Acesso completo + pode adicionar/remover usuários
+- **Usuário**: Acesso completo à ferramenta, mas NÃO pode gerenciar usuários
+
+**Fluxo de acesso:**
+1. **Primeiro acesso** → Tela de Setup (criar conta administrador)
+2. **Acessos seguintes** → Tela de Login (email + senha)
+3. **Sessão persiste** entre recarregamentos da página
+4. **Admin** pode criar/remover usuários pelo botão "Usuários" no header
+
+**Sem confirmação de email**: Usuários criados pelo admin podem logar imediatamente.
+
 ### 🔄 Sincronização Automática com Supabase
 
-A aplicação sincroniza automaticamente os dados com o Supabase sempre que você:
+A aplicação sincroniza automaticamente os dados com o Supabase:
 
+- ✅ **Após login** - Dados são sincronizados automaticamente ao entrar no sistema
 - ✅ **Adiciona uma localização** - Sincroniza imediatamente ao criar novo local
 - ✅ **Atualiza bairros** - Bairros buscados ou editados são sincronizados
 - ✅ **Adiciona um status** - Novos status são enviados automaticamente
@@ -318,17 +485,22 @@ PLeads/
 │   │   ├── LeadCard.tsx
 │   │   ├── LocationManagementModal.tsx
 │   │   ├── LocationSelector.tsx
+│   │   ├── LoginPage.tsx         # Tela de login
+│   │   ├── SetupPage.tsx         # Setup inicial (criar admin)
 │   │   ├── SettingsModal.tsx
 │   │   ├── StatusManagementModal.tsx
+│   │   ├── UserManagementModal.tsx  # Gestão de usuários (admin)
 │   │   └── ToastProvider.tsx
-│   ├── services/            # API integrations (Google Places, Supabase)
-│   │   ├── __tests__/       # Service tests (13 tests)
+│   ├── services/            # API integrations (Google Places, Supabase, Auth)
+│   │   ├── __tests__/       # Service tests (14 tests)
+│   │   ├── authService.ts        # Autenticação e gestão de usuários
 │   │   ├── placesService.ts
 │   │   └── supabaseService.ts
 │   ├── store/               # Zustand state management
 │   │   ├── __tests__/       # Store tests (27 tests)
 │   │   └── useStore.ts
 │   ├── hooks/               # Custom React hooks
+│   │   ├── useAuth.ts            # Hook de autenticação
 │   │   ├── useEscapeKey.ts
 │   │   ├── useFilteredLeads.ts
 │   │   └── useSearch.ts

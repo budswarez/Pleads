@@ -195,6 +195,7 @@ export interface SupabaseTableStatus {
   locations: boolean;
   categories: boolean;
   statuses: boolean;
+  user_profiles: boolean;
 }
 
 /**
@@ -258,6 +259,17 @@ export interface UseFilteredLeadsReturn {
   filteredLeads: Lead[];
   categoryCounts: Map<string, number>;
   statusCounts: Map<string, number>;
+}
+
+/**
+ * User profile for authentication
+ */
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'admin' | 'user';
+  created_at: string;
 }
 
 /**

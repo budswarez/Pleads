@@ -48,7 +48,8 @@ export const SUPABASE_TABLES = {
   LEADS: 'leads',
   LOCATIONS: 'locations',
   CATEGORIES: 'categories',
-  STATUSES: 'statuses'
+  STATUSES: 'statuses',
+  USER_PROFILES: 'user_profiles'
 } as const;
 
 /**

@@ -1,28 +1,48 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { MapPin, Settings, Loader2, Square, Palette, ChevronDown, Search } from 'lucide-react';
+import { MapPin, Settings, Loader2, Square, Palette, ChevronDown, Search, Users, LogOut } from 'lucide-react';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
 import SettingsModal from './components/SettingsModal';
 import StatusManagementModal from './components/StatusManagementModal';
 import CategoryManagementModal from './components/CategoryManagementModal';
+import UserManagementModal from './components/UserManagementModal';
 import LeadCard from './components/LeadCard';
+import LoginPage from './components/LoginPage';
+import SetupPage from './components/SetupPage';
 import { ToastProvider } from './components/ToastProvider';
 import useStore from './store/useStore';
 import { useSearch } from './hooks/useSearch';
 import { useFilteredLeads } from './hooks/useFilteredLeads';
 import { useEscapeKey } from './hooks/useEscapeKey';
+import { useAuth } from './hooks/useAuth';
+import { fetchLeads, fetchLocations, fetchCategories, fetchStatuses, syncAllData } from './services/supabaseService';
 
 /**
  * Main application component for PLeads
  * Manages lead generation and tracking using Google Places API
  */
 function App() {
+  // Auth
+  const {
+    user,
+    profile,
+    isAdmin,
+    isLoading: isAuthLoading,
+    isAuthenticated,
+    setupRequired,
+    supabaseReady,
+    signIn,
+    signOut,
+    refreshProfile
+  } = useAuth();
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
   // UI states
   const [activeTab, setActiveTab] = useState('all');
@@ -47,9 +67,9 @@ function App() {
     addCategory,
     removeCategory,
     getApiKey,
-    supabaseUrl,
-    supabaseAnonKey,
     setSupabaseConnected,
+    loadFromSupabase,
+    getAllDataForSync,
     appTitle,
     appDescription,
     appLogoUrl,
@@ -59,20 +79,40 @@ function App() {
   // Custom hooks
   const { isSearching, searchStatus, handleSearch, stopSearch } = useSearch();
 
-  // Initialize Supabase if env vars are present
-  const initializedRef = useRef(false);
-  if (!initializedRef.current && supabaseUrl && supabaseAnonKey) {
-    import('./services/supabaseService').then(({ initSupabase, testConnection }) => {
-      initSupabase(supabaseUrl, supabaseAnonKey);
-      testConnection(supabaseUrl, supabaseAnonKey).then(result => {
-        if (result.success) {
-          setSupabaseConnected(true);
-          console.log('Supabase auto-connected from env vars');
+  // Mark Supabase as connected and sync data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && supabaseReady) {
+      setSupabaseConnected(true);
+
+      // Auto-sync: upload local data then download from Supabase
+      const autoSync = async () => {
+        try {
+          // Upload local data first
+          const localData = getAllDataForSync();
+          await syncAllData(localData);
+
+          // Download from Supabase
+          const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
+            fetchLeads(),
+            fetchLocations(),
+            fetchCategories(),
+            fetchStatuses()
+          ]);
+
+          loadFromSupabase({
+            leads: leadsRes.data,
+            locations: locationsRes.data?.map(l => ({ ...l, id: l.id })),
+            categories: categoriesRes.data,
+            statuses: statusesRes.data
+          });
+        } catch (err) {
+          console.error('Auto-sync failed:', err);
         }
-      });
-    });
-    initializedRef.current = true;
-  }
+      };
+
+      autoSync();
+    }
+  }, [isAuthenticated, supabaseReady, setSupabaseConnected, loadFromSupabase, getAllDataForSync]);
 
   // Get filtered leads from store
   const baseFilteredLeads = getFilteredLeads();
@@ -138,6 +178,63 @@ function App() {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    setSupabaseConnected(false);
+  };
+
+  // --- Auth Guards ---
+
+  // Loading state
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 size={32} className="animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Carregando...</p>
+        </div>
+        <ToastProvider />
+      </div>
+    );
+  }
+
+  // Supabase not configured
+  if (!supabaseReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="bg-card border border-border rounded-lg shadow-lg p-8 max-w-md text-center">
+          <Settings size={48} className="mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Supabase Não Configurado</h2>
+          <p className="text-muted-foreground text-sm mb-4">
+            Configure as variáveis de ambiente <code className="text-primary">VITE_SUPABASE_URL</code> e <code className="text-primary">VITE_SUPABASE_ANON_KEY</code> no arquivo <code className="text-primary">.env</code> para habilitar o sistema de autenticação.
+          </p>
+        </div>
+        <ToastProvider />
+      </div>
+    );
+  }
+
+  // Setup required (no admin exists)
+  if (setupRequired && !isAuthenticated) {
+    return (
+      <>
+        <SetupPage onSetupComplete={() => refreshProfile()} />
+        <ToastProvider />
+      </>
+    );
+  }
+
+  // Not authenticated - show login
+  if (!isAuthenticated) {
+    return (
+      <>
+        <LoginPage onSignIn={signIn} />
+        <ToastProvider />
+      </>
+    );
+  }
+
+  // --- Authenticated App ---
   return (
     <div className="min-h-screen bg-background text-foreground p-8 font-sans transition-colors duration-300">
       {/* Header */}
@@ -156,14 +253,14 @@ function App() {
               <p className="text-muted-foreground mt-1">{appDescription}</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setIsCategoryModalOpen(true)}
               className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
               aria-label="Abrir gestão de categorias"
             >
               <Loader2 size={16} />
-              Gestão de Categorias
+              Categorias
             </button>
             <button
               onClick={() => setIsStatusModalOpen(true)}
@@ -171,7 +268,7 @@ function App() {
               aria-label="Abrir gestão de status"
             >
               <Palette size={16} />
-              Gestão de Status
+              Status
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -179,16 +276,40 @@ function App() {
               aria-label="Abrir gestão de locais"
             >
               <MapPin size={16} />
-              Gestão de Locais
+              Locais
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => setIsUserModalOpen(true)}
+                className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
+                aria-label="Abrir gestão de usuários"
+              >
+                <Users size={16} />
+                Usuários
+              </button>
+            )}
             <button
               onClick={() => setIsSettingsModalOpen(true)}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2"
               aria-label="Abrir configurações"
             >
               <Settings size={16} />
-              Configurações
             </button>
+
+            {/* User info & Logout */}
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+              <span className="text-xs text-muted-foreground hidden md:block">
+                {profile?.name || user?.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors"
+                title="Sair"
+                aria-label="Sair do sistema"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -410,6 +531,14 @@ function App() {
       />
 
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+
+      {isAdmin && user && (
+        <UserManagementModal
+          isOpen={isUserModalOpen}
+          onClose={() => setIsUserModalOpen(false)}
+          currentUserId={user.id}
+        />
+      )}
 
       {/* Toast notifications */}
       <ToastProvider />

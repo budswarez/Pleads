@@ -5,6 +5,71 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.2.0] - 2026-02-11
+
+### 🔐 Sistema de Autenticação
+
+#### Login e Gestão de Usuários
+- Implementado sistema de autenticação completo via **Supabase Auth**
+- Dois papéis: **Admin** (gerencia usuários) e **Usuário** (usa a ferramenta)
+- **Tela de Setup**: Primeiro acesso exibe formulário para criar conta administrador
+- **Tela de Login**: Formulário com email e senha, sessão persiste entre recarregamentos
+- **Gestão de Usuários**: Modal exclusivo para admins criar/remover usuários
+- Badges visuais: "Admin" (verde) e "Usuário" (azul) na lista de usuários
+- Botão de logout e nome do usuário no header
+- Detecção de "usuário falso" (proteção anti-enumeração do Supabase)
+
+#### Arquitetura de Auth
+- `authService.ts` - Serviço com signIn, signOut, setupAdmin, createUser, deleteUser
+- `useAuth.ts` - Hook com estado de autenticação, sessão, perfil e role
+- `LoginPage.tsx` - Tela de login com branding do app
+- `SetupPage.tsx` - Tela de setup inicial do administrador
+- `UserManagementModal.tsx` - Modal de gestão de usuários (admin only)
+
+#### RPCs de Segurança (SECURITY DEFINER)
+- `setup_first_admin()` - Cria admin no primeiro acesso + confirma email
+- `admin_confirm_and_create_profile()` - Admin cria usuário + confirma email
+- `admin_delete_user()` - Admin remove usuário do sistema
+- `is_setup_complete()` - Verifica se setup foi concluído (público)
+- `is_admin()` / `has_any_users()` - Helpers para políticas RLS sem recursão
+
+#### Políticas RLS Atualizadas
+- Tabelas de dados agora exigem autenticação: `auth.role() = 'authenticated'`
+- `user_profiles` usa funções SECURITY DEFINER para evitar recursão infinita
+- Política de insert permite setup (sem usuários) OU admin
+
+### 🔄 Sincronização Pós-Login
+- Dados sincronizados automaticamente com Supabase após login bem-sucedido
+- Upload de dados locais + download do Supabase em segundo plano
+- `persistSession: true` garante recuperação automática da sessão
+
+### 🐛 Correções
+- **Recursão infinita em RLS**: Políticas de `user_profiles` que consultavam a própria tabela causavam loop infinito. Corrigido com funções `is_admin()` e `has_any_users()` (SECURITY DEFINER)
+- **Email não confirmado**: SignUp via Supabase não confirmava email automaticamente. Corrigido com RPCs que confirmam explicitamente (`email_confirmed_at = NOW()`)
+- **Schema cache**: PostgREST não expunha `user_profiles` para usuários não autenticados. Corrigido usando RPCs que bypassam o cache
+- **Side-effect no render**: `setSupabaseConnected` era chamado durante render, causando re-renders infinitos. Movido para `useEffect`
+
+### 🗂️ Arquivos Criados
+```
+src/
+├── components/
+│   ├── LoginPage.tsx
+│   ├── SetupPage.tsx
+│   └── UserManagementModal.tsx
+├── hooks/
+│   └── useAuth.ts
+├── services/
+│   └── authService.ts
+```
+
+### 🗂️ Arquivos Modificados
+- `types/index.ts` - Adicionado tipo `UserProfile`, atualizado `SupabaseTableStatus`
+- `constants/index.ts` - Adicionado `USER_PROFILES` ao `SUPABASE_TABLES`
+- `supabaseService.ts` - `persistSession: true`, tabela `user_profiles` no SQL
+- `App.tsx` - Auth guard completo, UI de usuário no header, auto-sync pós-login
+
+---
+
 ## [2.1.0] - 2026-02-11
 
 ### ✨ Novas Funcionalidades
@@ -353,6 +418,7 @@ CHANGELOG.md (novo)
 - [ ] Exportação de leads para CSV/Excel
 - [ ] Analytics e tracking de uso
 - [x] ~~Busca por bairros para multiplicar resultados~~ (implementado em 2.1.0)
+- [x] ~~Sistema de autenticação com gestão de usuários~~ (implementado em 2.2.0)
 
 ---
 

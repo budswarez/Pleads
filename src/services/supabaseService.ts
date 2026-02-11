@@ -69,7 +69,7 @@ export function initSupabase(url: string, anonKey: string): SupabaseClient | nul
 
   supabaseClient = createClient(url, anonKey, {
     auth: {
-      persistSession: false
+      persistSession: true
     }
   });
 
@@ -224,6 +224,15 @@ CREATE TABLE IF NOT EXISTS statuses (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- User profiles table (for authentication)
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    email TEXT NOT NULL,
+    name TEXT,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_leads_city_state ON leads(city, state);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
@@ -253,7 +262,8 @@ export async function createTables(url: string, anonKey: string): Promise<TableC
         SUPABASE_TABLES.LEADS,
         SUPABASE_TABLES.LOCATIONS,
         SUPABASE_TABLES.CATEGORIES,
-        SUPABASE_TABLES.STATUSES
+        SUPABASE_TABLES.STATUSES,
+        SUPABASE_TABLES.USER_PROFILES
       ];
       const results: Array<{ table: string; exists: boolean }> = [];
 
@@ -299,7 +309,7 @@ export async function checkTables(): Promise<{ success: boolean; tables: Supabas
   if (!client) {
     return {
       success: false,
-      tables: { leads: false, locations: false, categories: false, statuses: false }
+      tables: { leads: false, locations: false, categories: false, statuses: false, user_profiles: false }
     };
   }
 
@@ -307,14 +317,16 @@ export async function checkTables(): Promise<{ success: boolean; tables: Supabas
     SUPABASE_TABLES.LEADS,
     SUPABASE_TABLES.LOCATIONS,
     SUPABASE_TABLES.CATEGORIES,
-    SUPABASE_TABLES.STATUSES
+    SUPABASE_TABLES.STATUSES,
+    SUPABASE_TABLES.USER_PROFILES
   ] as const;
 
   const status: SupabaseTableStatus = {
     leads: false,
     locations: false,
     categories: false,
-    statuses: false
+    statuses: false,
+    user_profiles: false
   };
 
   for (const table of tables) {
