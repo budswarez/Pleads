@@ -50,6 +50,19 @@
      USING (auth.uid() IS NOT NULL);
    ```
 
+### Supabase Service Role Key (CRÍTICO)
+
+**Esta chave dá acesso total ao seu banco de dados, ignorando Row-Level Security.**
+
+- **Padrão**: `sb.service_role.[redacted]`
+- **Uso**: Apenas em ambientes seguros (Server-side, API Routes, Edge Functions). **NUNCA** no frontend.
+- **Rotação**:
+  1. Acesse o Supabase Dashboard > Settings > API.
+  2. Role até a seção "Service Role Keys".
+  3. Gere uma nova chave.
+  4. Atualize a variável `SUPABASE_SERVICE_ROLE_KEY` no seu ambiente (ex: Vercel, .env local).
+  5. **NUNCA** adicione esta chave com prefixo `VITE_`.
+
 ---
 
 ## 2. Limpar Histórico do Git
@@ -152,6 +165,11 @@ if git diff --cached | grep -E 'sb_publishable_[A-Za-z0-9_-]+'; then
   exit 1
 fi
 
+if git diff --cached | grep -E 'sb\.service_role\.[A-Za-z0-9_-]+'; then
+  echo "ERRO: CRÍTICO - Supabase SERVICE ROLE key detectada! NÃO COMITE!"
+  exit 1
+fi
+
 exit 0
 ```
 
@@ -177,6 +195,9 @@ VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 
 # Supabase Anonymous Key (anon/public key, NÃO service role key)
 VITE_SUPABASE_ANON_KEY=sua_nova_anon_key_aqui
+
+# Supabase Service Role Key (APENAS Servidor/API - NUNCA expor ao cliente)
+SUPABASE_SERVICE_ROLE_KEY=sua_nova_service_role_key_aqui
 ```
 
 ### Usar .env.example para Documentação

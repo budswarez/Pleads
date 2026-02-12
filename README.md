@@ -1,4 +1,4 @@
-# PLeads - Lead Capture System (v2.4.1)
+# PLeads - Lead Capture System (v2.4.2)
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 

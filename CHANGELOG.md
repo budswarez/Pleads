@@ -5,6 +5,29 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.4.2] - 2026-02-12
+
+### 📱 Melhorias de Responsividade Mobile
+
+#### Interface Mobile Otimizada
+- **Menu Hambúrguer**: Implementado menu retrátil no cabeçalho para dispositivos móveis, limpando a navegação e escondendo botões de gestão (Categorias, Status, etc.) em uma gaveta acessível.
+- **Busca Mobile Friendly**: Botões de ação ("Buscar Leads", "Parar Busca", "Limpar") agora se empilham verticalmente em telas pequenas, aumentando a área de toque e prevenindo quebra de layout.
+- **LeadCard Compacto**: Reduzido padding (`p-4`) e ajustados tamanhos de fonte nos cards de leads para exibir mais informações em telas estreitas (iPhone SE/Mini) sem perder legibilidade.
+
+### 🐛 Correções e Melhorias
+
+#### Autenticação e Estado
+- **Sincronização de Login**: Corrigido bug onde o nome do usuário não aparecia imediatamente após login (agora usa `user_metadata` como fallback instantâneo).
+- **Logout Robusto**: Corrigido botão de logout que às vezes falhava ou causava erro 403. Implementada limpeza forçada do estado local mesmo se a chamada ao servidor falhar.
+- **Supabase Client Idempotente**: Corrigida inicialização múltipla do cliente Supabase (`Multiple GoTrueClient instances detected`), garantindo singleton e melhor gerenciamento de sessão com `autoRefreshToken`.
+
+#### Configuração
+- **Prioridade de Variáveis de Ambiente**: Corrigido carregamento da API Key do Google Places para priorizar sempre o valor do `.env` (`VITE_GOOGLE_PLACES_KEY`), ignorando valores antigos/vazios no localStorage.
+- **Alteração de Senha**: Corrigido bug na alteração de senha do próprio admin, agora utilizando o SDK diretamente para self-updates (funciona melhor em localhost).
+- **Build Fix**: Removida declaração duplicada de estado em `App.tsx` que quebrava o build de produção.
+
+---
+
 ## [2.4.1] - 2026-02-11
 
 ### 🐛 Correções - Configuração TypeScript
