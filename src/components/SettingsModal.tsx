@@ -65,7 +65,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   useEffect(() => {
     if (isOpen) {
-      setLocalApiKey(apiKey || '');
+      setLocalApiKey(apiKey || import.meta.env.VITE_GOOGLE_PLACES_KEY || '');
       setLocalSupabaseUrl(supabaseUrl || '');
       setLocalSupabaseKey(supabaseAnonKey || '');
       setTitle(appTitle || '');

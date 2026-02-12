@@ -59,7 +59,11 @@ const useStore = create<StoreState>()(
 
       // Get API Key (for service to consume)
       getApiKey: (): string => {
-        return get().apiKey || import.meta.env.VITE_GOOGLE_PLACES_KEY || '';
+        const stateKey = get().apiKey;
+        // Se a chave no estado for vazia, tenta pegar da variável de ambiente
+        return stateKey && stateKey.trim() !== ''
+          ? stateKey
+          : (import.meta.env.VITE_GOOGLE_PLACES_KEY || '');
       },
 
       // Supabase setters
@@ -226,12 +230,12 @@ const useStore = create<StoreState>()(
           leads: prevState.leads.map(lead =>
             lead.place_id === placeId
               ? {
-                  ...lead,
-                  notes: [
-                    ...(lead.notes || []),
-                    { id: Date.now(), text: noteText, date: new Date().toISOString() }
-                  ]
-                }
+                ...lead,
+                notes: [
+                  ...(lead.notes || []),
+                  { id: Date.now(), text: noteText, date: new Date().toISOString() }
+                ]
+              }
               : lead
           )
         }));
@@ -361,6 +365,12 @@ const useStore = create<StoreState>()(
     }),
     {
       name: STORAGE_KEYS.PLEADS_STORE,
+      partialize: (state) => {
+        // Exclui chaves de API e configurações de Supabase da persistência
+        // para que elas sempre sejam lidas do .env no carregamento
+        const { apiKey, supabaseUrl, supabaseAnonKey, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
