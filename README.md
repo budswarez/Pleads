@@ -1,4 +1,4 @@
-# PLeads - Lead Capture System
+# PLeads - Lead Capture System (v2.4.1)
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 
@@ -36,6 +36,8 @@ Modern TypeScript application for capturing and managing business leads using Go
      # Supabase
      VITE_SUPABASE_URL=https://your-project.supabase.co
      VITE_SUPABASE_ANON_KEY=your-anon-key
+     # Serverless (Admin API - APENAS servidor)
+     SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
      ```
 
 ## Running Locally
@@ -66,9 +68,10 @@ The built files will be in the `dist` directory.
    - `GOOGLE_PLACES_KEY` = sua chave do Google Places (sem prefixo `VITE_`)
    - `VITE_SUPABASE_URL` = URL do seu projeto Supabase
    - `VITE_SUPABASE_ANON_KEY` = anon key do Supabase
+   - `SUPABASE_SERVICE_ROLE_KEY` = service_role secret do Supabase (para alteração de senhas)
 4. Deploy!
 
-> **Segurança**: A `GOOGLE_PLACES_KEY` fica apenas no servidor (serverless functions em `api/`). Ela **nunca** é exposta no browser. O frontend chama `/api/places-search` e `/api/places-details` que atuam como proxy.
+> **Segurança**: As chaves `GOOGLE_PLACES_KEY` e `SUPABASE_SERVICE_ROLE_KEY` ficam apenas no servidor (serverless functions em `api/`). Elas **nunca** são expostas no browser.
 
 ---
 
@@ -456,7 +459,7 @@ O sistema possui autenticação integrada via **Supabase Auth** com dois papéis
 1. **Primeiro acesso** → Tela de Setup (criar conta administrador)
 2. **Acessos seguintes** → Tela de Login (email + senha)
 3. **Sessão persiste** entre recarregamentos da página
-4. **Admin** pode criar/remover usuários pelo botão "Usuários" no header
+4. **Admin** pode criar/remover usuários e **alterar senhas** pelo botão "Usuários" no header
 
 **Sem confirmação de email**: Usuários criados pelo admin podem logar imediatamente.
 
@@ -498,7 +501,8 @@ A sincronização é **não-bloqueante**, mantendo a interface responsiva. Os da
 PLeads/
 ├── api/                     # Vercel Serverless Functions (proxy)
 │   ├── places-search.ts     # Proxy para Google Places Text Search
-│   └── places-details.ts   # Proxy para Google Places Details
+│   ├── places-details.ts    # Proxy para Google Places Details
+│   └── admin-update-password.ts # Alteração segura de senha pelo admin
 ├── src/
 │   ├── components/          # React components (.tsx)
 │   │   ├── settings/        # Settings modal sub-components
@@ -543,7 +547,7 @@ PLeads/
 ├── vite.config.ts           # Vite bundler configuration
 ├── tailwind.config.js       # Tailwind CSS configuration
 ├── tsconfig.json            # TypeScript configuration
-├── tsconfig.node.json       # TypeScript config for Node files
+├── tsconfig.node.json       # TypeScript config for Node files (v2.4.1: emitDeclarationOnly + composite)
 ├── package.json             # Dependencies and scripts
 ├── CHANGELOG.md             # Version history and changes
 └── README.md                # This file

@@ -5,6 +5,41 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.4.1] - 2026-02-11
+
+### 🐛 Correções - Configuração TypeScript
+
+- **tsconfig.node.json**: Corrigido erro onde `allowImportingTsExtensions` exigia `noEmit` ou `emitDeclarationOnly`. 
+- Implementado `"emitDeclarationOnly": true` para manter compatibilidade com o modo `composite` exigido pelas referências de projeto no `tsconfig.json`.
+
+---
+
+## [2.4.0] - 2026-02-11
+
+### ✨ Novas Funcionalidades - Alteração de Senha pelo Admin
+
+Admins agora podem alterar a senha de qualquer usuário diretamente pelo painel de Gestão de Usuários.
+
+#### 🔒 Segurança
+- **Serverless Admin API**: Criada function `api/admin-update-password.ts` que utiliza a `service_role` key do Supabase no lado do servidor.
+- **Verificação de Papel**: A serverless function valida o JWT do solicitante e confirma se ele possui papel de `admin` antes de processar a alteração.
+- **Isolamento de Chaves**: A `service_role` key nunca é exposta ao frontend.
+
+#### 🎨 UI/UX
+- **Botão de Chave (🔑)**: Adicionado à lista de usuários para abrir o formulário de alteração.
+- **Formulário Inline**: Permite digitar a nova senha diretamente na lista, com suporte a `Enter` para salvar e `Escape` para cancelar.
+- **Feedback Visual**: Estados de loading e toasts de sucesso/erro integrados.
+
+#### 🗂️ Arquivos Criados
+- `api/admin-update-password.ts`
+
+#### 🗂️ Arquivos Modificados
+- `src/services/authService.ts` (Adicionada `adminUpdatePassword`)
+- `src/components/UserManagementModal.tsx` (Nova UI de alteração de senha)
+- `.env` / `.env.example` (Adicionada `SUPABASE_SERVICE_ROLE_KEY`)
+
+---
+
 ## [2.3.0] - 2026-02-11
 
 ### 🔒 Segurança - Proxy Serverless para Google Places API

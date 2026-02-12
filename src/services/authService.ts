@@ -242,3 +242,43 @@ export async function deleteUser(
 
   return { success: true };
 }
+
+/**
+ * Update a user's password (admin only, via serverless function)
+ */
+export async function adminUpdatePassword(
+  userId: string,
+  newPassword: string
+): Promise<{ success: boolean; error?: string }> {
+  const client = getSupabase();
+  if (!client) return { success: false, error: 'Supabase não inicializado.' };
+
+  // Obter token JWT da sessão atual do admin
+  const { data: { session } } = await client.auth.getSession();
+  if (!session?.access_token) {
+    return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+  }
+
+  try {
+    const response = await fetch('/api/admin-update-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId, newPassword }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || 'Erro ao alterar senha.' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating password:', error);
+    return { success: false, error: 'Erro de rede ao alterar senha.' };
+  }
+}
+
