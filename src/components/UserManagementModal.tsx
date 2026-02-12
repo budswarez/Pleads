@@ -227,8 +227,8 @@ const UserManagementModal = ({ isOpen, onClose, currentUserId }: UserManagementM
                               {u.name || u.email}
                             </span>
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${u.role === 'admin'
-                                ? 'bg-green-500/10 text-green-500'
-                                : 'bg-blue-500/10 text-blue-500'
+                              ? 'bg-green-500/10 text-green-500'
+                              : 'bg-blue-500/10 text-blue-500'
                               }`}>
                               {u.role === 'admin' ? 'Admin' : 'Usuário'}
                             </span>
@@ -238,22 +238,22 @@ const UserManagementModal = ({ isOpen, onClose, currentUserId }: UserManagementM
                       </div>
 
                       {/* Action buttons */}
-                      {u.id !== currentUserId && (
-                        <div className="flex items-center gap-1">
-                          {/* Change password button */}
-                          <button
-                            onClick={() => togglePasswordChange(u.id)}
-                            className={`p-1.5 rounded transition-colors ${changingPasswordId === u.id
-                                ? 'bg-amber-500/20 text-amber-500'
-                                : 'text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500'
-                              }`}
-                            title={`Alterar senha de ${u.name || u.email}`}
-                            aria-label={`Alterar senha de ${u.name || u.email}`}
-                          >
-                            <KeyRound size={14} />
-                          </button>
+                      <div className="flex items-center gap-1">
+                        {/* Change password button - show for everyone */}
+                        <button
+                          onClick={() => togglePasswordChange(u.id)}
+                          className={`p-1.5 rounded transition-colors ${changingPasswordId === u.id
+                            ? 'bg-amber-500/20 text-amber-500'
+                            : 'text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500'
+                            }`}
+                          title={`Alterar senha de ${u.name || u.email}`}
+                          aria-label={`Alterar senha de ${u.name || u.email}`}
+                        >
+                          <KeyRound size={14} />
+                        </button>
 
-                          {/* Delete button */}
+                        {/* Delete button - hide for current user */}
+                        {u.id !== currentUserId && (
                           <button
                             onClick={() => handleDeleteUser(u.id, u.name || u.email)}
                             disabled={deletingId === u.id}
@@ -267,8 +267,8 @@ const UserManagementModal = ({ isOpen, onClose, currentUserId }: UserManagementM
                               <Trash2 size={14} />
                             )}
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
 
                     {/* Inline password change form */}

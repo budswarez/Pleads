@@ -253,6 +253,15 @@ export async function adminUpdatePassword(
   const client = getSupabase();
   if (!client) return { success: false, error: 'Supabase não inicializado.' };
 
+  // Se o usuário estiver tentando alterar sua própria senha, utiliza o SDK diretamente
+  // Isso permite que funcione localmente (sem precisar do endpoint /api) e é mais seguro
+  const { data: { user } } = await client.auth.getUser();
+  if (user && user.id === userId) {
+    const { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
   // Obter token JWT da sessão atual do admin
   const { data: { session } } = await client.auth.getSession();
   if (!session?.access_token) {
