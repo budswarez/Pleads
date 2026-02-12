@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { MapPin, Settings, Loader2, Square, Palette, ChevronDown, Search, Users, LogOut } from 'lucide-react';
+import { MapPin, Settings, Loader2, Square, Palette, ChevronDown, Search, Users, LogOut, Menu, X } from 'lucide-react';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
 import SettingsModal from './components/SettingsModal';
@@ -43,6 +43,7 @@ function App() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // UI states
   const [activeTab, setActiveTab] = useState('all');
@@ -238,22 +239,24 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground p-8 font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="mb-8 max-w-7xl mx-auto">
+      <header className="mb-4 md:mb-8 max-w-7xl mx-auto border-b md:border-none pb-4 md:pb-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {appLogoUrl && (
               <img
                 src={appLogoUrl}
                 alt="Logo"
-                className="w-12 h-12 object-contain rounded-lg shadow-inner bg-black"
+                className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-lg shadow-inner bg-black"
               />
             )}
             <div>
-              <h1 className="text-4xl font-bold tracking-tight text-primary">{appTitle}</h1>
-              <p className="text-muted-foreground mt-1">{appDescription}</p>
+              <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-primary">{appTitle}</h1>
+              <p className="text-xs md:text-base text-muted-foreground mt-1 hidden sm:block">{appDescription}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-2">
             <button
               onClick={() => setIsCategoryModalOpen(true)}
               className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
@@ -298,7 +301,7 @@ function App() {
 
             {/* User info & Logout */}
             <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-              <span className="text-xs text-muted-foreground hidden md:block">
+              <span className="text-xs text-muted-foreground hidden lg:block">
                 {profile?.name || user?.user_metadata?.name || user?.email}
               </span>
               <button
@@ -311,7 +314,77 @@ function App() {
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-foreground hover:bg-secondary rounded-md"
+              aria-label="Menu"
+            >
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-4 space-y-2 border-t pt-4 animate-in slide-in-from-top-2">
+            <div className="flex items-center justify-between px-2 mb-4">
+              <span className="text-sm font-medium text-muted-foreground">
+                {profile?.name || user?.user_metadata?.name || user?.email}
+              </span>
+              <button
+                onClick={handleSignOut}
+                className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors flex items-center gap-2"
+                aria-label="Sair do sistema"
+              >
+                <LogOut size={16} />
+                Sair
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { setIsCategoryModalOpen(true); setIsMobileMenuOpen(false); }}
+                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
+              >
+                <Loader2 size={16} />
+                Categorias
+              </button>
+              <button
+                onClick={() => { setIsStatusModalOpen(true); setIsMobileMenuOpen(false); }}
+                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
+              >
+                <Palette size={16} />
+                Status
+              </button>
+              <button
+                onClick={() => { setIsModalOpen(true); setIsMobileMenuOpen(false); }}
+                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
+              >
+                <MapPin size={16} />
+                Locais
+              </button>
+              <button
+                onClick={() => { setIsSettingsModalOpen(true); setIsMobileMenuOpen(false); }}
+                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
+              >
+                <Settings size={16} />
+                Configurações
+              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => { setIsUserModalOpen(true); setIsMobileMenuOpen(false); }}
+                  className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2 col-span-2"
+                >
+                  <Users size={16} />
+                  Usuários
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -321,12 +394,12 @@ function App() {
 
           {/* Search Actions */}
           {hasLocationSelected && (
-            <div className="mt-6 flex flex-wrap gap-3">
-              <div className="relative">
+            <div className="mt-6 flex flex-col md:flex-row flex-wrap gap-3">
+              <div className="relative w-full md:w-auto">
                 <button
                   onClick={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
                   disabled={isSearching}
-                  className="bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="w-full md:w-auto bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   aria-label="Buscar leads"
                   aria-expanded={isSearchDropdownOpen}
                   aria-haspopup="true"
@@ -338,7 +411,7 @@ function App() {
 
                 {/* Dropdown for category-specific search */}
                 {isSearchDropdownOpen && (
-                  <div className="absolute top-full mt-2 left-0 bg-card border border-border rounded-md shadow-lg py-1 z-10 min-w-[200px]">
+                  <div className="absolute top-full mt-2 left-0 w-full md:w-auto bg-card border border-border rounded-md shadow-lg py-1 z-10 min-w-[200px]">
                     <button
                       onClick={() => {
                         handleSearchNewPlaces(null);
@@ -370,7 +443,7 @@ function App() {
               {isSearching && (
                 <button
                   onClick={stopSearch}
-                  className="bg-destructive text-destructive-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2"
+                  className="w-full md:w-auto bg-destructive text-destructive-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
                   aria-label="Parar busca"
                 >
                   <Square size={16} />
@@ -381,7 +454,7 @@ function App() {
               {baseFilteredLeads.length > 0 && !isSearching && (
                 <button
                   onClick={handleClearLeads}
-                  className="bg-secondary text-secondary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-80 transition-colors"
+                  className="w-full md:w-auto bg-secondary text-secondary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-80 transition-colors"
                   aria-label={activeTab === 'all' ? 'Limpar todos os leads' : 'Limpar leads da categoria'}
                 >
                   Limpar {activeTab === 'all' ? 'Todos' : categories.find(c => c.id === activeTab)?.label}
@@ -406,8 +479,8 @@ function App() {
               <button
                 onClick={() => setActiveTab('all')}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'all'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
                 aria-label="Todas as categorias"
               >
@@ -420,8 +493,8 @@ function App() {
                     key={cat.id}
                     onClick={() => setActiveTab(cat.id)}
                     className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === cat.id
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                       }`}
                     aria-label={`Filtrar por ${cat.label}`}
                   >
@@ -438,8 +511,8 @@ function App() {
               <button
                 onClick={() => setActiveStatus('all')}
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === 'all'
-                    ? 'bg-foreground text-background border-foreground shadow-sm'
-                    : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
+                  ? 'bg-foreground text-background border-foreground shadow-sm'
+                  : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
                   }`}
                 aria-label="Todos os status"
               >
@@ -454,8 +527,8 @@ function App() {
                     key={status.id}
                     onClick={() => setActiveStatus(status.id)}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === status.id
-                        ? 'bg-foreground text-background border-foreground shadow-sm'
-                        : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
+                      ? 'bg-foreground text-background border-foreground shadow-sm'
+                      : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
                       }`}
                     aria-label={`Filtrar por status ${status.label}`}
                   >

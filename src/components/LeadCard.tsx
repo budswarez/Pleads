@@ -78,7 +78,7 @@ const LeadCard = React.memo(({
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow">
+    <div className="bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 flex flex-col hover:shadow-md transition-shadow">
       {/* Header com nome e status */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
@@ -89,7 +89,7 @@ const LeadCard = React.memo(({
               aria-label={`Status: ${lead.status}`}
               title={lead.status}
             />
-            <h3 className="font-semibold text-lg line-clamp-1">{lead.name}</h3>
+            <h3 className="font-semibold text-base md:text-lg line-clamp-1">{lead.name}</h3>
           </div>
           <span className="text-[10px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full inline-block">
             {getCategoryLabel()}
