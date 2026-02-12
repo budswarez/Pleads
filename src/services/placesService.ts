@@ -311,9 +311,22 @@ export async function fetchNeighborhoods(
           }
 
           if (match && match[1]) {
-            const neighborhood = match[1].trim();
-            // Filter out obviously wrong extractions (e.g. numbers, specific strings)
-            if (neighborhood.length > 2 && !/^\d+$/.test(neighborhood)) {
+            let neighborhood = match[1].trim();
+
+            // Fix for cases like "Loja 02 - Boqueirão"
+            if (neighborhood.includes(' - ')) {
+              const parts = neighborhood.split(' - ');
+              neighborhood = parts[parts.length - 1].trim();
+            }
+
+            // Expanded filter for bad extractions
+            if (
+              neighborhood.length > 2 &&
+              !/^\d+$/.test(neighborhood) &&
+              !neighborhood.toLowerCase().startsWith('loja ') &&
+              !neighborhood.toLowerCase().startsWith('apto ') &&
+              !neighborhood.toLowerCase().startsWith('sala ')
+            ) {
               allNeighborhoods.add(neighborhood);
             }
           }
