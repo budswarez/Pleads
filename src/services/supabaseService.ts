@@ -67,9 +67,21 @@ export function initSupabase(url: string, anonKey: string): SupabaseClient | nul
     return null;
   }
 
+  // Se já estiver inicializado com os mesmos parâmetros, retorna o cliente existente
+  // Isso evita o erro "Multiple GoTrueClient instances detected"
+  if (supabaseClient) {
+    // @ts-ignore - acessando propriedade privada para validação
+    const currentUrl = supabaseClient.supabaseUrl;
+    if (currentUrl === url) {
+      return supabaseClient;
+    }
+  }
+
   supabaseClient = createClient(url, anonKey, {
     auth: {
-      persistSession: true
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   });
 

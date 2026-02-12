@@ -115,19 +115,37 @@ export async function signOut(): Promise<void> {
 
 /**
  * Get the current user's profile
+ * @param passedUserId - Optional userId if already known (saves an API call)
  */
-export async function getUserProfile(): Promise<UserProfile | null> {
+export async function getUserProfile(passedUserId?: string): Promise<UserProfile | null> {
   const client = getSupabase();
   if (!client) return null;
 
-  const { data: { user } } = await client.auth.getUser();
-  if (!user) return null;
+  let userId = passedUserId;
 
-  const { data, error } = await client
+  if (!userId) {
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) return null;
+    userId = user.id;
+  }
+
+  // Tenta buscar o perfil com um pequeno retry para evitar race conditions logo após o login
+  let { data, error } = await client
     .from(SUPABASE_TABLES.USER_PROFILES)
     .select('*')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single();
+
+  if (error && error.code === 'PGRST116') { // Record not found or error, tenta mais uma vez
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const retry = await client
+      .from(SUPABASE_TABLES.USER_PROFILES)
+      .select('*')
+      .eq('id', userId)
+      .single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error || !data) return null;
 

@@ -299,7 +299,7 @@ function App() {
             {/* User info & Logout */}
             <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
               <span className="text-xs text-muted-foreground hidden md:block">
-                {profile?.name || user?.email}
+                {profile?.name || user?.user_metadata?.name || user?.email}
               </span>
               <button
                 onClick={handleSignOut}
@@ -405,11 +405,10 @@ function App() {
             <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  activeTab === 'all'
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'all'
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                }`}
+                  }`}
                 aria-label="Todas as categorias"
               >
                 Todas ({baseFilteredLeads.length})
@@ -420,11 +419,10 @@ function App() {
                   <button
                     key={cat.id}
                     onClick={() => setActiveTab(cat.id)}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      activeTab === cat.id
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === cat.id
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                    }`}
+                      }`}
                     aria-label={`Filtrar por ${cat.label}`}
                   >
                     {cat.label} ({count})
@@ -439,11 +437,10 @@ function App() {
             <div className="flex flex-wrap gap-2 mb-6">
               <button
                 onClick={() => setActiveStatus('all')}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${
-                  activeStatus === 'all'
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === 'all'
                     ? 'bg-foreground text-background border-foreground shadow-sm'
                     : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
                 aria-label="Todos os status"
               >
                 Todos Status
@@ -456,11 +453,10 @@ function App() {
                   <button
                     key={status.id}
                     onClick={() => setActiveStatus(status.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${
-                      activeStatus === status.id
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === status.id
                         ? 'bg-foreground text-background border-foreground shadow-sm'
                         : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
-                    }`}
+                      }`}
                     aria-label={`Filtrar por status ${status.label}`}
                   >
                     <div

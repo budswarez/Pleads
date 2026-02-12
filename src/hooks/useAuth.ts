@@ -33,8 +33,11 @@ export function useAuth(): UseAuthReturn {
   const [supabaseReady, setSupabaseReady] = useState(false);
 
   const refreshProfile = useCallback(async () => {
-    const p = await getUserProfile();
-    setProfile(p);
+    const { data: { user } } = await (getSupabase()?.auth.getUser() || { data: { user: null } });
+    if (user) {
+      const p = await getUserProfile(user.id);
+      setProfile(p);
+    }
   }, []);
 
   // Initialize Supabase and check auth state
@@ -63,7 +66,7 @@ export function useAuth(): UseAuthReturn {
 
       if (session?.user) {
         setUser(session.user);
-        const p = await getUserProfile();
+        const p = await getUserProfile(session.user.id);
         setProfile(p);
       } else {
         // No session - check if setup is needed
@@ -78,7 +81,7 @@ export function useAuth(): UseAuthReturn {
         async (event, session) => {
           if (event === 'SIGNED_IN' && session?.user) {
             setUser(session.user);
-            const p = await getUserProfile();
+            const p = await getUserProfile(session.user.id);
             setProfile(p);
             setSetupRequired(false);
           } else if (event === 'SIGNED_OUT') {
@@ -104,9 +107,14 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   const signOut = useCallback(async () => {
-    await authSignOut();
-    setUser(null);
-    setProfile(null);
+    try {
+      await authSignOut();
+    } catch (err) {
+      console.error('Error during sign out:', err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+    }
   }, []);
 
   return {
