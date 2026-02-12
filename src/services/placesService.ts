@@ -93,13 +93,19 @@ export async function searchPlaces(
       requestBody.pageToken = pageToken;
     }
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Goog-FieldMask': fieldMask,
+    };
+
+    // Envia chave customizada via header seguro (o proxy injeta no Google)
+    if (key) {
+      headers['X-Api-Key'] = key;
+    }
+
     const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': fieldMask,
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -177,14 +183,19 @@ export async function getPlaceDetails(
       'types'
     ].join(',');
 
-    const url = `${API_ENDPOINTS.GOOGLE_PLACES_DETAILS}/${placeId}`;
+    const url = `${API_ENDPOINTS.GOOGLE_PLACES_DETAILS}?placeId=${encodeURIComponent(placeId)}`;
+
+    const headers: Record<string, string> = {
+      'X-Goog-FieldMask': fieldMask,
+    };
+
+    if (key) {
+      headers['X-Api-Key'] = key;
+    }
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': fieldMask,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -251,13 +262,18 @@ export async function fetchNeighborhoods(
         requestBody.pageToken = pageToken;
       }
 
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Goog-FieldMask': fieldMask,
+      };
+
+      if (key) {
+        headers['X-Api-Key'] = key;
+      }
+
       const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': key,
-          'X-Goog-FieldMask': fieldMask,
-        },
+        headers,
         body: JSON.stringify(requestBody),
       });
 

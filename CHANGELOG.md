@@ -5,6 +5,43 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.3.0] - 2026-02-11
+
+### 🔒 Segurança - Proxy Serverless para Google Places API
+
+A API key do Google Places agora **nunca é exposta no browser**. Todas as requisições ao Google passam por serverless functions na Vercel que injetam a chave no servidor.
+
+#### Arquitetura
+```
+Frontend → /api/places-search → Vercel Serverless → Google Places API
+                                 (API key aqui)
+```
+
+#### Novas Serverless Functions
+- `api/places-search.ts` - Proxy para Text Search (`POST`)
+- `api/places-details.ts` - Proxy para Place Details (`GET` com `?placeId=`)
+- Ambas suportam chave customizada via header `X-Api-Key` (fallback para `GOOGLE_PLACES_KEY` do servidor)
+
+#### Alterações no Frontend
+- `placesService.ts` - Removido `X-Goog-Api-Key` de todas as chamadas; API key enviada via `X-Api-Key` (o proxy converte)
+- `constants/index.ts` - URLs atualizadas: `/api/places-search`, `/api/places-details`
+- `getPlaceDetails()` agora usa query param `?placeId=` ao invés de path segment
+
+#### Configuração
+- `vite.config.ts` - Proxy dev atualizado para novas rotas com rewrite de `X-Api-Key` → `X-Goog-Api-Key`
+- `.env` / `.env.example` - Adicionada `GOOGLE_PLACES_KEY` (server-side, sem prefixo `VITE_`)
+- `@vercel/node` adicionado como devDependency
+
+#### Testes
+- Todos os 41 testes atualizados e passando (novas URLs, novo header)
+
+### 🔄 Mudanças de Compatibilidade
+- **Vercel**: Adicione `GOOGLE_PLACES_KEY` em Settings → Environment Variables
+- Frontend não envia mais `X-Goog-Api-Key` diretamente ao Google
+- `getPlaceDetails` usa `?placeId=` ao invés de `/placeId` no path
+
+---
+
 ## [2.2.0] - 2026-02-11
 
 ### 🔐 Sistema de Autenticação

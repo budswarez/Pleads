@@ -59,7 +59,7 @@ describe('placesService', () => {
       expect(result.nextPageToken).toBe('next-token-123');
     });
 
-    it('should send POST request with correct headers and body', async () => {
+    it('should send POST request with correct headers (API key via X-Api-Key)', async () => {
       const mockResponse = { places: [] };
 
       (global.fetch as any).mockResolvedValueOnce({
@@ -70,17 +70,21 @@ describe('placesService', () => {
       await searchPlaces('São Paulo', 'SP', 'restaurante', null, 'test-api-key');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/google/v1/places:searchText',
+        '/api/places-search',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
-            'X-Goog-Api-Key': 'test-api-key',
+            'X-Api-Key': 'test-api-key',
             'X-Goog-FieldMask': expect.stringContaining('places.id'),
           }),
           body: expect.stringContaining('restaurante em São Paulo, SP, Brasil'),
         })
       );
+
+      // Não deve enviar X-Goog-Api-Key diretamente (o proxy faz isso)
+      const fetchCall = (global.fetch as any).mock.calls[0];
+      expect(fetchCall[1].headers['X-Goog-Api-Key']).toBeUndefined();
     });
 
     it('should handle pagination with pageToken', async () => {
@@ -207,7 +211,7 @@ describe('placesService', () => {
       ).rejects.toThrow('API Error: 500');
     });
 
-    it('should include field mask in headers', async () => {
+    it('should use query param for placeId and send API key via X-Api-Key', async () => {
       const mockResponse = {
         id: 'test-place-1',
         displayName: { text: 'Test' }
@@ -221,15 +225,19 @@ describe('placesService', () => {
       await getPlaceDetails('test-place-1', 'test-api-key');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/google/v1/places/test-place-1',
+        '/api/places-details?placeId=test-place-1',
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({
-            'X-Goog-Api-Key': 'test-api-key',
+            'X-Api-Key': 'test-api-key',
             'X-Goog-FieldMask': expect.stringContaining('displayName'),
           }),
         })
       );
+
+      // Não deve enviar X-Goog-Api-Key diretamente
+      const fetchCall = (global.fetch as any).mock.calls[0];
+      expect(fetchCall[1].headers['X-Goog-Api-Key']).toBeUndefined();
     });
   });
 

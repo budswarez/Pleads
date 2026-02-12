@@ -27,9 +27,13 @@ Modern TypeScript application for capturing and managing business leads using Go
      ```bash
      cp .env.example .env
      ```
-   - Edit `.env` and add your Google Places API key:
+   - Edit `.env` and add your keys:
      ```
+     # Dev local (proxy do Vite usa para repassar ao Google)
      VITE_GOOGLE_PLACES_KEY=your_api_key_here
+     # Servidor (Vercel serverless functions)
+     GOOGLE_PLACES_KEY=your_api_key_here
+     # Supabase
      VITE_SUPABASE_URL=https://your-project.supabase.co
      VITE_SUPABASE_ANON_KEY=your-anon-key
      ```
@@ -54,6 +58,18 @@ npm run build
 
 The built files will be in the `dist` directory.
 
+## Deploy na Vercel
+
+1. Faça push do projeto para o GitHub
+2. Importe o projeto na [Vercel](https://vercel.com/)
+3. Em **Settings → Environment Variables**, adicione:
+   - `GOOGLE_PLACES_KEY` = sua chave do Google Places (sem prefixo `VITE_`)
+   - `VITE_SUPABASE_URL` = URL do seu projeto Supabase
+   - `VITE_SUPABASE_ANON_KEY` = anon key do Supabase
+4. Deploy!
+
+> **Segurança**: A `GOOGLE_PLACES_KEY` fica apenas no servidor (serverless functions em `api/`). Ela **nunca** é exposta no browser. O frontend chama `/api/places-search` e `/api/places-details` que atuam como proxy.
+
 ---
 
 ## Obtendo as Chaves de API
@@ -71,13 +87,16 @@ The built files will be in the `dist` directory.
    - Clique na API key criada para editá-la
    - Em **Application restrictions**, selecione:
      - **HTTP referrers** (para desenvolvimento web)
-     - Adicione `http://localhost:*` e seu domínio de produção
+     - Adicione `http://localhost:*` e seu domínio de produção (ex: `seuapp.vercel.app/*`)
    - Em **API restrictions**, selecione **Restrict key**
      - Marque apenas "Places API"
    - Clique em **Save**
-8. Copie a API key e adicione ao arquivo `.env`
+8. Copie a API key e adicione ao arquivo `.env` (tanto `VITE_GOOGLE_PLACES_KEY` quanto `GOOGLE_PLACES_KEY`)
+9. Na Vercel, adicione apenas `GOOGLE_PLACES_KEY` em Environment Variables
 
 **Custo**: A Places API tem uma camada gratuita de $200/mês. [Veja os preços aqui](https://cloud.google.com/maps-platform/pricing).
+
+> **Nota sobre segurança**: Em produção, as requisições ao Google passam por serverless functions (proxy em `api/`), então a API key **não é exposta** no browser. O prefixo `VITE_` é usado apenas no dev local.
 
 ### Supabase
 
@@ -477,6 +496,9 @@ A sincronização é **não-bloqueante**, mantendo a interface responsiva. Os da
 
 ```
 PLeads/
+├── api/                     # Vercel Serverless Functions (proxy)
+│   ├── places-search.ts     # Proxy para Google Places Text Search
+│   └── places-details.ts   # Proxy para Google Places Details
 ├── src/
 │   ├── components/          # React components (.tsx)
 │   │   ├── settings/        # Settings modal sub-components
@@ -536,6 +558,7 @@ PLeads/
 - **Tailwind CSS 3** - Utility-first CSS framework
 - **Vitest 2** - Unit testing framework (41 tests, 100% passing)
 - **Google Places API (New)** - Business data source (Text Search, Place Details, Neighborhood fetch)
+- **Vercel Serverless Functions** - API proxy (keeps Google API key server-side)
 - **Supabase** - Backend database with real-time sync
 - **React Hot Toast** - Toast notifications
 
