@@ -231,6 +231,15 @@ export async function getPlaceDetails(
  * @param apiKey - Google Places API key (optional, falls back to env)
  * @returns Array of unique neighborhood names
  */
+/**
+ * Fetch neighborhoods for a city using a heuristic strategy with Google Places API
+ * 1. Searches for common distributed places (Schools, Bakeries, Pharmacies)
+ * 2. Extracts neighborhood name from formatted_address
+ * @param city - City name
+ * @param state - State abbreviation
+ * @param apiKey - Google Places API key (optional, falls back to env)
+ * @returns Array of unique neighborhood names
+ */
 export async function fetchNeighborhoods(
   city: string,
   state: string,
@@ -243,24 +252,27 @@ export async function fetchNeighborhoods(
   }
 
   const allNeighborhoods: Set<string> = new Set();
-  let pageToken: string | null = null;
+
+  // Queries targeting different types of places to cover more area
+  const queries = [
+    `Escola em ${city}, ${state}, Brasil`,
+    `Farmácia em ${city}, ${state}, Brasil`,
+    `Supermercado em ${city}, ${state}, Brasil`,
+    `Padaria em ${city}, ${state}, Brasil`
+  ];
 
   try {
-    do {
+    const promises = queries.map(async (query) => {
       const fieldMask = [
-        'places.displayName',
-        'nextPageToken'
+        'places.formattedAddress',
+        'places.location' // Optional, useful if we needed filtering
       ].join(',');
 
-      const requestBody: Record<string, unknown> = {
-        textQuery: `bairros de ${city}, ${state}, Brasil`,
+      const requestBody = {
+        textQuery: query,
         languageCode: 'pt-BR',
-        pageSize: GOOGLE_RESULTS_PER_PAGE,
+        pageSize: 50, // Request max page size
       };
-
-      if (pageToken) {
-        requestBody.pageToken = pageToken;
-      }
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -278,28 +290,39 @@ export async function fetchNeighborhoods(
       });
 
       if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error(ERROR_MESSAGES.API_KEY_INVALID);
-        }
-        throw new Error(`API Error: ${response.status}`);
+        console.warn(`Warning: Failed to fetch for query "${query}": ${response.status}`);
+        return;
       }
 
       const data = await response.json() as GoogleNewTextSearchResponse;
       const places = data.places || [];
 
+      // Regex to extract neighborhood: " - Neighborhood, City"
+      // Matches standard Brazil address format: "Rua X, 123 - Bairro, Cidade - UF"
+      const regex = new RegExp(` - ([^,]+), ${city}`, 'i');
+      const backupRegex = new RegExp(`, ([^,]+), ${city}`, 'i'); // "Rua X, Bairro, Cidade" (less common but possible)
+
       for (const place of places) {
-        const name = place.displayName?.text;
-        if (name) {
-          allNeighborhoods.add(name);
+        const address = place.formattedAddress;
+        if (address) {
+          let match = address.match(regex);
+          if (!match) {
+            match = address.match(backupRegex);
+          }
+
+          if (match && match[1]) {
+            const neighborhood = match[1].trim();
+            // Filter out obviously wrong extractions (e.g. numbers, specific strings)
+            if (neighborhood.length > 2 && !/^\d+$/.test(neighborhood)) {
+              allNeighborhoods.add(neighborhood);
+            }
+          }
         }
       }
+    });
 
-      pageToken = data.nextPageToken || null;
-
-      if (pageToken) {
-        await sleep(PAGINATION_DELAY_MS);
-      }
-    } while (pageToken);
+    // Run all queries in parallel
+    await Promise.all(promises);
 
     return [...allNeighborhoods].sort();
   } catch (error) {
