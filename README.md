@@ -2,7 +2,7 @@
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 
-**Features**: Authentication (Admin/User) • Google Places API (New) • Auto-fetch neighborhoods • Multi-select search by neighborhood • Paginação de Cards • Auto-sync with Supabase • TypeScript strict mode • 41 automated tests • Toast notifications • Keyboard navigation
+**Features**: Authentication (Admin/User) • Google Places API via Supabase Edge Functions • Auto-fetch neighborhoods • Multi-select search by neighborhood • Paginação de Cards • Auto-sync with Supabase • TypeScript strict mode • Estado modularizado (Zustand Slices) • Toast notifications • Keyboard navigation
 
 ## Prerequisites
 
@@ -65,13 +65,12 @@ The built files will be in the `dist` directory.
 1. Faça push do projeto para o GitHub
 2. Importe o projeto na [Vercel](https://vercel.com/)
 3. Em **Settings → Environment Variables**, adicione:
-   - `GOOGLE_PLACES_KEY` = sua chave do Google Places (sem prefixo `VITE_`)
    - `VITE_SUPABASE_URL` = URL do seu projeto Supabase
    - `VITE_SUPABASE_ANON_KEY` = anon key do Supabase
    - `SUPABASE_SERVICE_ROLE_KEY` = service_role secret do Supabase (para alteração de senhas)
 4. Deploy!
 
-> **Segurança**: As chaves `GOOGLE_PLACES_KEY` e `SUPABASE_SERVICE_ROLE_KEY` ficam apenas no servidor (serverless functions em `api/`). Elas **nunca** são expostas no browser.
+> **Segurança**: A chave do Google (`GOOGLE_PLACES_KEY`) deve agora ser armazenada nos **Secrets** de Edge Functions do seu backend no Supabase. O Frontend consome a proxy Function de lá, mascarando a manipulação direta. A `SUPABASE_SERVICE_ROLE_KEY` destina-se apenas a Serverless functions que atualizam a senha de admin, devendo ficar unicamente na Vercel (se estiver utilizando esse modelo).
 
 ---
 
@@ -571,8 +570,8 @@ PLeads/
 - **Tailwind CSS 3** - Utility-first CSS framework
 - **Vitest 2** - Unit testing framework (41 tests, 100% passing)
 - **Google Places API (New)** - Business data source (Text Search, Place Details, Neighborhood fetch)
-- **Vercel Serverless Functions** - API proxy (keeps Google API key server-side)
-- **Supabase** - Backend database with real-time sync
+- **Supabase Edge Functions** - API Proxy for Places Service ensuring complete abstraction (keeps Google keys securely embedded)
+- **Supabase** - Backend database with real-time sync and Auth APIs
 - **React Hot Toast** - Toast notifications
 
 ---

@@ -55,7 +55,7 @@
 **Esta chave dá acesso total ao seu banco de dados, ignorando Row-Level Security.**
 
 - **Padrão**: `sb.service_role.[redacted]`
-- **Uso**: Apenas em ambientes seguros (Server-side, API Routes, Edge Functions). **NUNCA** no frontend.
+- **Uso**: Apenas em ambientes seguros (Server-side, API Routes, Edge Functions no próprio Supabase). **NUNCA** no frontend.
 - **Rotação**:
   1. Acesse o Supabase Dashboard > Settings > API.
   2. Role até a seção "Service Role Keys".

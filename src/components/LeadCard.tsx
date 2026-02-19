@@ -1,5 +1,6 @@
-import React from 'react';
-import { MapPin, Phone, Globe, MessageCircle, ExternalLink, Star, StarHalf } from 'lucide-react';
+import React, { useState } from 'react';
+import { MapPin, Phone, Globe, MessageCircle, ExternalLink, Star, StarHalf, FileText } from 'lucide-react';
+import LeadNotesModal from './LeadNotesModal';
 import type { Lead, Status, Category } from '../types';
 
 interface LeadCardProps {
@@ -67,15 +68,8 @@ const LeadCard = React.memo(({
     return lead.category || '';
   };
 
-  // Handler para atualizar notas
-  const handleNotesBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    const val = e.target.value.trim();
-    const lastNote = lead.notes?.[lead.notes.length - 1]?.text || '';
-
-    if (val && lastNote !== val) {
-      onNotesUpdate(lead.place_id, val);
-    }
-  };
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const notesCount = lead.notes ? lead.notes.length : 0;
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 flex flex-col hover:shadow-md transition-shadow">
@@ -140,13 +134,14 @@ const LeadCard = React.memo(({
 
       {/* Seção de comentários */}
       <div className="mb-4">
-        <textarea
-          placeholder="Adicionar comentário..."
-          className="w-full text-xs bg-muted/30 border border-border rounded p-2 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none h-16"
-          defaultValue={lead.notes?.[lead.notes.length - 1]?.text || ''}
-          onBlur={handleNotesBlur}
-          aria-label={`Comentários para ${lead.name}`}
-        />
+        <button
+          onClick={() => setIsNotesModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-medium text-secondary-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border shadow-sm"
+          aria-label="Ver ou adicionar anotações"
+        >
+          <FileText size={14} />
+          {notesCount > 0 ? `${notesCount} anotaç${notesCount === 1 ? 'ão' : 'ões'}` : 'Adicionar anotação'}
+        </button>
       </div>
 
       {/* Footer com status e link para Maps */}
@@ -176,6 +171,14 @@ const LeadCard = React.memo(({
           </a>
         </div>
       </div>
+
+      {/* Modal de Anotações */}
+      <LeadNotesModal
+        isOpen={isNotesModalOpen}
+        onClose={() => setIsNotesModalOpen(false)}
+        lead={lead}
+        onAddNote={onNotesUpdate}
+      />
     </div>
   );
 });

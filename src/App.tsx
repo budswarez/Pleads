@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Search, MapPin, Loader2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { MapPin, Settings, Loader2, Square, Palette, ChevronDown, Search, Users, LogOut, Menu, X } from 'lucide-react';
 import { usePagination } from './hooks/usePagination';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
@@ -18,7 +17,10 @@ import { useSearch } from './hooks/useSearch';
 import { useFilteredLeads } from './hooks/useFilteredLeads';
 import { useEscapeKey } from './hooks/useEscapeKey';
 import { useAuth } from './hooks/useAuth';
-import { fetchLeads, fetchLocations, fetchCategories, fetchStatuses, syncAllData } from './services/supabaseService';
+import { useAutoSync } from './hooks/useAutoSync';
+import { Header } from './components/Header';
+import { SearchControls } from './components/SearchControls';
+import { FilterTabs } from './components/FilterTabs';
 import type { Lead, Status, Category } from './types';
 
 /**
@@ -126,8 +128,6 @@ function App() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   // UI states
   const [activeTab, setActiveTab] = useState('all');
   const [activeStatus, setActiveStatus] = useState<string | null>('all');
@@ -152,8 +152,6 @@ function App() {
     removeCategory,
     getApiKey,
     setSupabaseConnected,
-    loadFromSupabase,
-    getAllDataForSync,
     appTitle,
     appDescription,
     appLogoUrl,
@@ -165,39 +163,8 @@ function App() {
   const { isSearching, searchStatus, handleSearch, stopSearch } = useSearch();
 
   // Mark Supabase as connected and sync data when authenticated
-  useEffect(() => {
-    if (isAuthenticated && supabaseReady) {
-      setSupabaseConnected(true);
-
-      // Auto-sync: upload local data then download from Supabase
-      const autoSync = async () => {
-        try {
-          // Upload local data first
-          const localData = getAllDataForSync();
-          await syncAllData(localData);
-
-          // Download from Supabase
-          const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
-            fetchLeads(),
-            fetchLocations(),
-            fetchCategories(),
-            fetchStatuses()
-          ]);
-
-          loadFromSupabase({
-            leads: leadsRes.data,
-            locations: locationsRes.data?.map(l => ({ ...l, id: l.id })),
-            categories: categoriesRes.data,
-            statuses: statusesRes.data
-          });
-        } catch (err) {
-          console.error('Auto-sync failed:', err);
-        }
-      };
-
-      autoSync();
-    }
-  }, [isAuthenticated, supabaseReady, setSupabaseConnected, loadFromSupabase, getAllDataForSync]);
+  // Call Auto-Sync custom hook
+  useAutoSync(isAuthenticated, supabaseReady);
 
   // Get filtered leads from store
   const baseFilteredLeads = getFilteredLeads();
@@ -323,153 +290,19 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-foreground p-8 font-sans transition-colors duration-300">
       {/* Header */}
-      <header className="mb-4 md:mb-8 max-w-7xl mx-auto border-b md:border-none pb-4 md:pb-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {appLogoUrl && (
-              <img
-                src={appLogoUrl}
-                alt="Logo"
-                className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-lg shadow-inner bg-black"
-              />
-            )}
-            <div>
-              <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-primary">{appTitle}</h1>
-              <p className="text-xs md:text-base text-muted-foreground mt-1 hidden sm:block">{appDescription}</p>
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-2">
-            <button
-              onClick={() => setIsCategoryModalOpen(true)}
-              className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
-              aria-label="Abrir gestão de categorias"
-            >
-              <Loader2 size={16} />
-              Categorias
-            </button>
-            <button
-              onClick={() => setIsStatusModalOpen(true)}
-              className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
-              aria-label="Abrir gestão de status"
-            >
-              <Palette size={16} />
-              Status
-            </button>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
-              aria-label="Abrir gestão de locais"
-            >
-              <MapPin size={16} />
-              Locais
-            </button>
-            {isAdmin && (
-              <button
-                onClick={() => setIsUserModalOpen(true)}
-                className="bg-secondary text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center gap-2"
-                aria-label="Abrir gestão de usuários"
-              >
-                <Users size={16} />
-                Usuários
-              </button>
-            )}
-            <button
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2"
-              aria-label="Abrir configurações"
-            >
-              <Settings size={16} />
-            </button>
-
-            {/* User info & Logout */}
-            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
-              <span className="text-xs text-muted-foreground hidden lg:block">
-                {profile?.name || user?.user_metadata?.name || user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors"
-                title="Sair"
-                aria-label="Sair do sistema"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-foreground hover:bg-secondary rounded-md"
-              aria-label="Menu"
-            >
-              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden mt-4 space-y-2 border-t pt-4 animate-in slide-in-from-top-2">
-            <div className="flex items-center justify-between px-2 mb-4">
-              <span className="text-sm font-medium text-muted-foreground">
-                {profile?.name || user?.user_metadata?.name || user?.email}
-              </span>
-              <button
-                onClick={handleSignOut}
-                className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors flex items-center gap-2"
-                aria-label="Sair do sistema"
-              >
-                <LogOut size={16} />
-                Sair
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => { setIsCategoryModalOpen(true); setIsMobileMenuOpen(false); }}
-                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
-              >
-                <Loader2 size={16} />
-                Categorias
-              </button>
-              <button
-                onClick={() => { setIsStatusModalOpen(true); setIsMobileMenuOpen(false); }}
-                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
-              >
-                <Palette size={16} />
-                Status
-              </button>
-              <button
-                onClick={() => { setIsModalOpen(true); setIsMobileMenuOpen(false); }}
-                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
-              >
-                <MapPin size={16} />
-                Locais
-              </button>
-              <button
-                onClick={() => { setIsSettingsModalOpen(true); setIsMobileMenuOpen(false); }}
-                className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2"
-              >
-                <Settings size={16} />
-                Configurações
-              </button>
-              {isAdmin && (
-                <button
-                  onClick={() => { setIsUserModalOpen(true); setIsMobileMenuOpen(false); }}
-                  className="bg-secondary text-secondary-foreground px-4 py-3 rounded-md text-sm font-medium hover:bg-opacity-80 transition-colors flex items-center justify-center gap-2 col-span-2"
-                >
-                  <Users size={16} />
-                  Usuários
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </header>
+      <Header
+        appTitle={appTitle}
+        appDescription={appDescription}
+        appLogoUrl={appLogoUrl}
+        isAdmin={isAdmin}
+        username={profile?.name || user?.user_metadata?.name || user?.email || 'Usuário'}
+        handleSignOut={handleSignOut}
+        openCategoryModal={() => setIsCategoryModalOpen(true)}
+        openStatusModal={() => setIsStatusModalOpen(true)}
+        openLocationModal={() => setIsModalOpen(true)}
+        openSettingsModal={() => setIsSettingsModalOpen(true)}
+        openUserModal={() => setIsUserModalOpen(true)}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto">
@@ -477,156 +310,36 @@ function App() {
           <LocationSelector />
 
           {/* Search Actions */}
-          {hasLocationSelected && (
-            <div className="mt-6 flex flex-col md:flex-row flex-wrap gap-3">
-              <div className="relative w-full md:w-auto">
-                <button
-                  onClick={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
-                  disabled={isSearching}
-                  className="w-full md:w-auto bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  aria-label="Buscar leads"
-                  aria-expanded={isSearchDropdownOpen}
-                  aria-haspopup="true"
-                >
-                  <Search size={16} />
-                  Buscar Leads
-                  <ChevronDown size={14} />
-                </button>
-
-                {/* Dropdown for category-specific search */}
-                {isSearchDropdownOpen && (
-                  <div className="absolute top-full mt-2 left-0 w-full md:w-auto bg-card border border-border rounded-md shadow-lg py-1 z-10 min-w-[200px]">
-                    <button
-                      onClick={() => {
-                        handleSearchNewPlaces(null);
-                        setIsSearchDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-secondary/50 transition-colors"
-                      aria-label="Buscar em todas as categorias"
-                    >
-                      Todas as Categorias
-                    </button>
-                    <div className="border-t border-border my-1" />
-                    {categories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => {
-                          handleSearchNewPlaces(cat.id);
-                          setIsSearchDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-secondary/50 transition-colors"
-                        aria-label={`Buscar apenas ${cat.label}`}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {isSearching && (
-                <button
-                  onClick={stopSearch}
-                  className="w-full md:w-auto bg-destructive text-destructive-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
-                  aria-label="Parar busca"
-                >
-                  <Square size={16} />
-                  Parar Busca
-                </button>
-              )}
-
-              {baseFilteredLeads.length > 0 && !isSearching && (
-                <button
-                  onClick={handleClearLeads}
-                  className="w-full md:w-auto bg-secondary text-secondary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-80 transition-colors"
-                  aria-label={activeTab === 'all' ? 'Limpar todos os leads' : 'Limpar leads da categoria'}
-                >
-                  Limpar {activeTab === 'all' ? 'Todos' : categories.find(c => c.id === activeTab)?.label}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Search Status */}
-          {isSearching && searchStatus && (
-            <div className="mt-4 bg-primary/10 text-primary px-4 py-2 rounded-md text-sm animate-pulse">
-              {searchStatus}
-            </div>
-          )}
+          <SearchControls
+            hasLocationSelected={hasLocationSelected}
+            isSearching={isSearching}
+            isSearchDropdownOpen={isSearchDropdownOpen}
+            setIsSearchDropdownOpen={setIsSearchDropdownOpen}
+            handleSearchNewPlaces={handleSearchNewPlaces}
+            categories={categories}
+            stopSearch={stopSearch}
+            baseFilteredLeads={baseFilteredLeads}
+            handleClearLeads={handleClearLeads}
+            activeTab={activeTab}
+            searchStatus={searchStatus}
+          />
         </div>
 
         {/* Leads Display Section */}
         <div className="bg-card border border-border rounded-lg shadow-lg p-6">
-          {/* Category Tabs */}
-          {hasLocationSelected && baseFilteredLeads.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                  }`}
-                aria-label="Todas as categorias"
-              >
-                Todas ({baseFilteredLeads.length})
-              </button>
-              {categories.map(cat => {
-                const count = categoryCounts.get(cat.id) || 0;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveTab(cat.id)}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === cat.id
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                      }`}
-                    aria-label={`Filtrar por ${cat.label}`}
-                  >
-                    {cat.label} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Status Sub-filters */}
-          {hasLocationSelected && baseFilteredLeads.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              <button
-                onClick={() => setActiveStatus('all')}
-                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === 'all'
-                  ? 'bg-foreground text-background border-foreground shadow-sm'
-                  : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
-                  }`}
-                aria-label="Todos os status"
-              >
-                Todos Status
-              </button>
-              {statuses.map(status => {
-                const count = statusCounts.get(status.id) || 0;
-                if (count === 0 && activeStatus !== status.id) return null;
-
-                return (
-                  <button
-                    key={status.id}
-                    onClick={() => setActiveStatus(status.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === status.id
-                      ? 'bg-foreground text-background border-foreground shadow-sm'
-                      : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
-                      }`}
-                    aria-label={`Filtrar por status ${status.label}`}
-                  >
-                    <div
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: status.color }}
-                      aria-hidden="true"
-                    />
-                    {status.label} ({count})
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* Category Tabs and Status Filters */}
+          <FilterTabs
+            hasLocationSelected={hasLocationSelected}
+            baseFilteredLeads={baseFilteredLeads}
+            categories={categories}
+            categoryCounts={categoryCounts}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            statuses={statuses}
+            statusCounts={statusCounts}
+            activeStatus={activeStatus}
+            setActiveStatus={setActiveStatus}
+          />
 
           {/* Empty States and Leads Grid */}
           {!hasLocationSelected ? (

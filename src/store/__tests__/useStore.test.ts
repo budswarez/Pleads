@@ -10,7 +10,7 @@ describe('useStore', () => {
       leads: [],
       selectedState: null,
       selectedCity: null,
-      selectedNeighborhood: '',
+      selectedNeighborhoods: [],
     });
   });
 
@@ -350,7 +350,7 @@ describe('useStore', () => {
 
       const mockData = {
         leads: [createMockLead('1')],
-        locations: [{ id: 1, city: 'Test City', state: 'TC' }],
+        locations: [{ id: 1, city: 'Test City', state: 'TC', neighborhoods: [] }],
         statuses: [{ id: 'TEST', label: 'Test Status', color: '#000000' }],
         categories: [{ id: 'test', label: 'Test Category', query: 'test' }]
       };

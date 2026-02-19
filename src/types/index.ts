@@ -61,42 +61,20 @@ export interface Category {
 /**
  * Zustand store state interface
  */
-export interface StoreState {
+export interface LocationSlice {
   // Data
   locations: Location[];
-  leads: Lead[];
-  statuses: Status[];
-  categories: Category[];
 
   // Selection
   selectedState: string | null;
   selectedCity: string | null;
   selectedNeighborhoods: string[];
 
-  // Configuration
-  apiKey: string;
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  supabaseConnected: boolean;
-  appTitle: string;
-  appDescription: string;
-  appLogoUrl: string;
-  maxLeadsPerCategory: number;
-  leadsPerPage: number;
-
-  // Location Management Methods
+  // Management Methods
   addLocation: (city: string, state: string) => boolean;
   removeLocation: (id: number) => void;
   getStates: () => string[];
   getCitiesByState: (state: string) => string[];
-
-  // Lead Management Methods
-  addLeads: (leads: Lead[]) => number;
-  clearLeads: (onlySelected?: boolean) => void;
-  removeLeadsByCategory: (categoryId: string) => void;
-  updateLeadStatus: (placeId: string, status: string) => void;
-  updateLeadNotes: (placeId: string, noteText: string) => void;
-  getFilteredLeads: () => Lead[];
 
   // Selection Methods
   setSelectedState: (state: string | null) => void;
@@ -106,6 +84,25 @@ export interface StoreState {
   // Neighborhood Management Methods
   updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => void;
   getNeighborhoodsByLocation: (city: string, state: string) => string[];
+}
+
+export interface LeadSlice {
+  // Data
+  leads: Lead[];
+
+  // Lead Management Methods
+  addLeads: (leads: Lead[]) => number;
+  clearLeads: (onlySelected?: boolean) => void;
+  removeLeadsByCategory: (categoryId: string) => void;
+  updateLeadStatus: (placeId: string, status: string) => void;
+  updateLeadNotes: (placeId: string, noteText: string) => void;
+  getFilteredLeads: () => Lead[];
+}
+
+export interface StatusCategorySlice {
+  // Data
+  statuses: Status[];
+  categories: Category[];
 
   // Status Management Methods
   addStatus: (label: string, color: string) => void;
@@ -115,6 +112,19 @@ export interface StoreState {
   // Category Management Methods
   addCategory: (label: string, query: string) => void;
   removeCategory: (id: string) => void;
+}
+
+export interface ConfigSlice {
+  // Configuration Data
+  apiKey: string;
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+  supabaseConnected: boolean;
+  appTitle: string;
+  appDescription: string;
+  appLogoUrl: string;
+  maxLeadsPerCategory: number;
+  leadsPerPage: number;
 
   // Configuration Methods
   setApiKey: (key: string) => void;
@@ -140,6 +150,11 @@ export interface StoreState {
     statuses: Status[];
   }>) => void;
 }
+
+/**
+ * Zustand store state interface combining all slices
+ */
+export type StoreState = LocationSlice & LeadSlice & StatusCategorySlice & ConfigSlice;
 
 /**
  * Google Places API response types

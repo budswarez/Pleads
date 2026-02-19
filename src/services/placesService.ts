@@ -1,5 +1,6 @@
 import type { PlaceDetails, Lead } from '../types';
-import { ERROR_MESSAGES, API_ENDPOINTS, GOOGLE_RESULTS_PER_PAGE } from '../constants';
+import { ERROR_MESSAGES, GOOGLE_RESULTS_PER_PAGE } from '../constants';
+import { getSupabase } from './supabaseService';
 
 const DEFAULT_GOOGLE_PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY;
 
@@ -93,30 +94,30 @@ export async function searchPlaces(
       requestBody.pageToken = pageToken;
     }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Goog-FieldMask': fieldMask,
-    };
-
-    // Envia chave customizada via header seguro (o proxy injeta no Google)
-    if (key) {
-      headers['X-Api-Key'] = key;
+    const supabase = getSupabase();
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
     }
 
-    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
+    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
+      body: {
+        action: 'textSearch',
+        payload: {
+          requestBody,
+          fieldMask,
+          apiKey: key
+        }
+      }
     });
 
-    if (!response.ok) {
-      if (response.status === 403) {
+    if (error) {
+      if (error.message?.includes('403')) {
         throw new Error(ERROR_MESSAGES.API_KEY_INVALID);
       }
-      throw new Error(`API Error: ${response.status}`);
+      throw new Error(`API Error: ${error.message}`);
     }
 
-    const data = await response.json() as GoogleNewTextSearchResponse;
+    const data = responseData as GoogleNewTextSearchResponse;
 
     const places = data.places || [];
 
@@ -183,29 +184,30 @@ export async function getPlaceDetails(
       'types'
     ].join(',');
 
-    const url = `${API_ENDPOINTS.GOOGLE_PLACES_DETAILS}?placeId=${encodeURIComponent(placeId)}`;
-
-    const headers: Record<string, string> = {
-      'X-Goog-FieldMask': fieldMask,
-    };
-
-    if (key) {
-      headers['X-Api-Key'] = key;
+    const supabase = getSupabase();
+    if (!supabase) {
+      throw new Error('Supabase client not initialized');
     }
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
+    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
+      body: {
+        action: 'placeDetails',
+        payload: {
+          placeId,
+          fieldMask,
+          apiKey: key
+        }
+      }
     });
 
-    if (!response.ok) {
-      if (response.status === 403) {
+    if (error) {
+      if (error.message?.includes('403')) {
         throw new Error(ERROR_MESSAGES.API_KEY_INVALID);
       }
-      throw new Error(`API Error: ${response.status}`);
+      throw new Error(`API Error: ${error.message}`);
     }
 
-    const data = await response.json() as GoogleNewPlaceDetailsResponse;
+    const data = responseData as GoogleNewPlaceDetailsResponse;
 
     return {
       place_id: data.id,
@@ -282,24 +284,26 @@ async function fetchNeighborhoodsHeuristic(
   const fieldMask = ['places.formattedAddress', 'places.location'].join(',');
 
   const promises = queries.map(async (query) => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Goog-FieldMask': fieldMask,
-    };
-    if (key) headers['X-Api-Key'] = key;
+    const supabase = getSupabase();
+    if (!supabase) return;
 
-    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ textQuery: query, languageCode: 'pt-BR', pageSize: 50 }),
+    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
+      body: {
+        action: 'textSearch',
+        payload: {
+          requestBody: { textQuery: query, languageCode: 'pt-BR', pageSize: 50 },
+          fieldMask,
+          apiKey: key
+        }
+      }
     });
 
-    if (!response.ok) {
-      console.warn(`Warning: Heuristic fetch failed for "${query}": ${response.status}`);
+    if (error) {
+      console.warn(`Warning: Heuristic fetch failed for "${query}": ${error.message}`);
       return;
     }
 
-    const data = await response.json() as GoogleNewTextSearchResponse;
+    const data = responseData as GoogleNewTextSearchResponse;
     for (const place of data.places || []) {
       if (place.formattedAddress) {
         const name = extractNeighborhoodFromAddress(place.formattedAddress, city);
@@ -335,24 +339,26 @@ async function fetchNeighborhoodsDirect(
   ].join(',');
 
   const promises = queries.map(async (query) => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Goog-FieldMask': fieldMask,
-    };
-    if (key) headers['X-Api-Key'] = key;
+    const supabase = getSupabase();
+    if (!supabase) return;
 
-    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ textQuery: query, languageCode: 'pt-BR', pageSize: 50 }),
+    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
+      body: {
+        action: 'textSearch',
+        payload: {
+          requestBody: { textQuery: query, languageCode: 'pt-BR', pageSize: 50 },
+          fieldMask,
+          apiKey: key
+        }
+      }
     });
 
-    if (!response.ok) {
-      console.warn(`Warning: Direct fetch failed for "${query}": ${response.status}`);
+    if (error) {
+      console.warn(`Warning: Direct fetch failed for "${query}": ${error.message}`);
       return;
     }
 
-    const data = await response.json() as GoogleNewTextSearchResponse;
+    const data = responseData as GoogleNewTextSearchResponse;
     for (const place of data.places || []) {
       // Try to extract from address first
       if (place.formattedAddress) {
@@ -395,29 +401,31 @@ async function fetchNeighborhoodsByType(
   const fieldMask = ['places.displayName', 'places.formattedAddress'].join(',');
 
   const promises = types.map(async (type) => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'X-Goog-FieldMask': fieldMask,
-    };
-    if (key) headers['X-Api-Key'] = key;
+    const supabase = getSupabase();
+    if (!supabase) return;
 
-    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        textQuery: `${city}, ${state}, Brasil`,
-        languageCode: 'pt-BR',
-        pageSize: 50,
-        includedType: type,
-      }),
+    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
+      body: {
+        action: 'textSearch',
+        payload: {
+          requestBody: {
+            textQuery: `${city}, ${state}, Brasil`,
+            languageCode: 'pt-BR',
+            pageSize: 50,
+            includedType: type,
+          },
+          fieldMask,
+          apiKey: key
+        }
+      }
     });
 
-    if (!response.ok) {
-      console.warn(`Warning: Type-based fetch failed for type "${type}": ${response.status}`);
+    if (error) {
+      console.warn(`Warning: Type-based fetch failed for type "${type}": ${error.message}`);
       return;
     }
 
-    const data = await response.json() as GoogleNewTextSearchResponse;
+    const data = responseData as GoogleNewTextSearchResponse;
     for (const place of data.places || []) {
       const displayName = place.displayName?.text?.trim();
       if (

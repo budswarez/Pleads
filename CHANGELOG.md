@@ -9,6 +9,17 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 ### ✨ Novas Funcionalidades
 
+#### 🏗️ Arquitetura e Estado (Zustand Slices)
+- **Modularização do Store**: O estado global (`useStore.ts`) foi refatorado utilizando o padrão de "Slices" do Zustand. Foram criados slices independentes para Locais, Leads, Status e Configurações, facilitando a manutenção e testes.
+- **Hook de Sincronização**: A lógica de sincronização com o banco de dados Supabase foi extraída para o hook dedicado `useAutoSync.ts`.
+
+#### 🧩 Componentização da UI
+- **UI Desacoplada**: A interface principal em `App.tsx` foi decomposta em componentes reutilizáveis menores: `Header.tsx`, `SearchControls.tsx` e `FilterTabs.tsx`, reduzindo drasticamente o tamanho do arquivo principal e melhorando a legibilidade.
+- **Modal de Anotações (LeadNotesModal)**: A edição de notas dos leads foi movida de textareas inline para um modal dedicado, permitindo um histórico mais limpo e economizando espaço na grade.
+
+#### 🔒 Segurança Reforçada (Supabase Edge Functions)
+- **Migração do Proxy Google Places**: As chamadas para a API do Google Places foram migradas para uma **Edge Function nativa no Supabase** (`google-places`). As requisições agora usam de modo seguro o `supabase.functions.invoke`, limitando totalmente a visibilidade da API Key externa do Google no front.
+
 #### 📑 Paginação de Cards
 - **Paginação Client-Side**: Implementada paginação para a grade de leads, exibindo inicialmente 60 cards por página para melhorar a performance de renderização em listas grandes.
 - **Configuração Flexível**: O limite de cards por página agora pode ser ajustado diretamente no painel de Configurações.
