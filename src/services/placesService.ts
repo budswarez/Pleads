@@ -225,20 +225,173 @@ export async function getPlaceDetails(
 }
 
 /**
- * Fetch neighborhoods for a city using Google Places API (New) Text Search
- * @param city - City name
- * @param state - State abbreviation
- * @param apiKey - Google Places API key (optional, falls back to env)
- * @returns Array of unique neighborhood names
+ * Helper: extract neighborhood name from a Brazilian formatted address.
+ * Handles patterns like "Rua X, 123 - Bairro, Cidade - UF"
  */
+function extractNeighborhoodFromAddress(address: string, city: string): string | null {
+  const regex = new RegExp(` - ([^,]+), ${city}`, 'i');
+  const backupRegex = new RegExp(`, ([^,]+), ${city}`, 'i');
+
+  let match = address.match(regex);
+  if (!match) {
+    match = address.match(backupRegex);
+  }
+
+  if (!match || !match[1]) return null;
+
+  let neighborhood = match[1].trim();
+
+  // Fix for cases like "Loja 02 - Boqueirão"
+  if (neighborhood.includes(' - ')) {
+    const parts = neighborhood.split(' - ');
+    neighborhood = parts[parts.length - 1].trim();
+  }
+
+  // Filter bad extractions
+  if (
+    neighborhood.length <= 2 ||
+    /^\d+$/.test(neighborhood) ||
+    neighborhood.toLowerCase().startsWith('loja ') ||
+    neighborhood.toLowerCase().startsWith('apto ') ||
+    neighborhood.toLowerCase().startsWith('sala ')
+  ) {
+    return null;
+  }
+
+  return neighborhood;
+}
+
 /**
- * Fetch neighborhoods for a city using a heuristic strategy with Google Places API
- * 1. Searches for common distributed places (Schools, Bakeries, Pharmacies)
- * 2. Extracts neighborhood name from formatted_address
+ * Strategy 1 — Heuristic: search for common distributed places
+ * (Schools, Pharmacies, Supermarkets, Bakeries) and extract neighborhood from address.
+ */
+async function fetchNeighborhoodsHeuristic(
+  city: string,
+  state: string,
+  key: string
+): Promise<string[]> {
+  const results: string[] = [];
+
+  const queries = [
+    `Escola em ${city}, ${state}, Brasil`,
+    `Farmácia em ${city}, ${state}, Brasil`,
+    `Supermercado em ${city}, ${state}, Brasil`,
+    `Padaria em ${city}, ${state}, Brasil`
+  ];
+
+  const fieldMask = ['places.formattedAddress', 'places.location'].join(',');
+
+  const promises = queries.map(async (query) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Goog-FieldMask': fieldMask,
+    };
+    if (key) headers['X-Api-Key'] = key;
+
+    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ textQuery: query, languageCode: 'pt-BR', pageSize: 50 }),
+    });
+
+    if (!response.ok) {
+      console.warn(`Warning: Heuristic fetch failed for "${query}": ${response.status}`);
+      return;
+    }
+
+    const data = await response.json() as GoogleNewTextSearchResponse;
+    for (const place of data.places || []) {
+      if (place.formattedAddress) {
+        const name = extractNeighborhoodFromAddress(place.formattedAddress, city);
+        if (name) results.push(name);
+      }
+    }
+  });
+
+  await Promise.all(promises);
+  return results;
+}
+
+/**
+ * Strategy 2 — Direct: search Google Places for "bairros de [city]"
+ * and extract neighborhood names from the returned addresses.
+ */
+async function fetchNeighborhoodsDirect(
+  city: string,
+  state: string,
+  key: string
+): Promise<string[]> {
+  const results: string[] = [];
+
+  const queries = [
+    `bairros de ${city}, ${state}, Brasil`,
+    `bairro ${city}, ${state}, Brasil`,
+  ];
+
+  const fieldMask = [
+    'places.formattedAddress',
+    'places.displayName',
+    'places.location'
+  ].join(',');
+
+  const promises = queries.map(async (query) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Goog-FieldMask': fieldMask,
+    };
+    if (key) headers['X-Api-Key'] = key;
+
+    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ textQuery: query, languageCode: 'pt-BR', pageSize: 50 }),
+    });
+
+    if (!response.ok) {
+      console.warn(`Warning: Direct fetch failed for "${query}": ${response.status}`);
+      return;
+    }
+
+    const data = await response.json() as GoogleNewTextSearchResponse;
+    for (const place of data.places || []) {
+      // Try to extract from address first
+      if (place.formattedAddress) {
+        const name = extractNeighborhoodFromAddress(place.formattedAddress, city);
+        if (name) {
+          results.push(name);
+          continue;
+        }
+      }
+
+      // Fallback: if the displayName looks like a neighborhood name (not the city itself)
+      const displayName = place.displayName?.text?.trim();
+      if (
+        displayName &&
+        displayName.length > 2 &&
+        displayName.toLowerCase() !== city.toLowerCase() &&
+        !/^\d+$/.test(displayName)
+      ) {
+        results.push(displayName);
+      }
+    }
+  });
+
+  await Promise.all(promises);
+  return results;
+}
+
+/**
+ * Fetch neighborhoods for a city using two complementary strategies:
+ * 1. Heuristic — Searches for common places (schools, pharmacies, etc.) and extracts
+ *    neighborhood from the formatted address.
+ * 2. Direct — Searches for "bairros de [city]" via Google Places API.
+ *
+ * Results are merged with case-insensitive deduplication.
+ *
  * @param city - City name
  * @param state - State abbreviation
  * @param apiKey - Google Places API key (optional, falls back to env)
- * @returns Array of unique neighborhood names
+ * @returns Array of unique neighborhood names, sorted alphabetically
  */
 export async function fetchNeighborhoods(
   city: string,
@@ -251,93 +404,23 @@ export async function fetchNeighborhoods(
     throw new Error(ERROR_MESSAGES.API_KEY_MISSING);
   }
 
-  const allNeighborhoods: Set<string> = new Set();
-
-  // Queries targeting different types of places to cover more area
-  const queries = [
-    `Escola em ${city}, ${state}, Brasil`,
-    `Farmácia em ${city}, ${state}, Brasil`,
-    `Supermercado em ${city}, ${state}, Brasil`,
-    `Padaria em ${city}, ${state}, Brasil`
-  ];
-
   try {
-    const promises = queries.map(async (query) => {
-      const fieldMask = [
-        'places.formattedAddress',
-        'places.location' // Optional, useful if we needed filtering
-      ].join(',');
+    // Run both strategies in parallel
+    const [heuristicResults, directResults] = await Promise.all([
+      fetchNeighborhoodsHeuristic(city, state, key),
+      fetchNeighborhoodsDirect(city, state, key),
+    ]);
 
-      const requestBody = {
-        textQuery: query,
-        languageCode: 'pt-BR',
-        pageSize: 50, // Request max page size
-      };
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'X-Goog-FieldMask': fieldMask,
-      };
-
-      if (key) {
-        headers['X-Api-Key'] = key;
+    // Case-insensitive deduplication
+    const seen = new Map<string, string>(); // lowercase → original casing
+    for (const name of [...heuristicResults, ...directResults]) {
+      const lower = name.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.set(lower, name);
       }
+    }
 
-      const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        console.warn(`Warning: Failed to fetch for query "${query}": ${response.status}`);
-        return;
-      }
-
-      const data = await response.json() as GoogleNewTextSearchResponse;
-      const places = data.places || [];
-
-      // Regex to extract neighborhood: " - Neighborhood, City"
-      // Matches standard Brazil address format: "Rua X, 123 - Bairro, Cidade - UF"
-      const regex = new RegExp(` - ([^,]+), ${city}`, 'i');
-      const backupRegex = new RegExp(`, ([^,]+), ${city}`, 'i'); // "Rua X, Bairro, Cidade" (less common but possible)
-
-      for (const place of places) {
-        const address = place.formattedAddress;
-        if (address) {
-          let match = address.match(regex);
-          if (!match) {
-            match = address.match(backupRegex);
-          }
-
-          if (match && match[1]) {
-            let neighborhood = match[1].trim();
-
-            // Fix for cases like "Loja 02 - Boqueirão"
-            if (neighborhood.includes(' - ')) {
-              const parts = neighborhood.split(' - ');
-              neighborhood = parts[parts.length - 1].trim();
-            }
-
-            // Expanded filter for bad extractions
-            if (
-              neighborhood.length > 2 &&
-              !/^\d+$/.test(neighborhood) &&
-              !neighborhood.toLowerCase().startsWith('loja ') &&
-              !neighborhood.toLowerCase().startsWith('apto ') &&
-              !neighborhood.toLowerCase().startsWith('sala ')
-            ) {
-              allNeighborhoods.add(neighborhood);
-            }
-          }
-        }
-      }
-    });
-
-    // Run all queries in parallel
-    await Promise.all(promises);
-
-    return [...allNeighborhoods].sort();
+    return [...seen.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   } catch (error) {
     console.error('Error fetching neighborhoods:', error);
     throw error;
