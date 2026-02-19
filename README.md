@@ -1,8 +1,8 @@
-# PLeads - Lead Capture System (v2.4.2)
+# PLeads - Lead Capture System (v2.5.0)
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 
-**Features**: Authentication (Admin/User) • Google Places API (New) • Auto-fetch neighborhoods • Multi-select search by neighborhood • Auto-sync with Supabase • TypeScript strict mode • 41 automated tests • Toast notifications • Keyboard navigation
+**Features**: Authentication (Admin/User) • Google Places API (New) • Auto-fetch neighborhoods • Multi-select search by neighborhood • Paginação de Cards • Auto-sync with Supabase • TypeScript strict mode • 41 automated tests • Toast notifications • Keyboard navigation
 
 ## Prerequisites
 
@@ -477,6 +477,15 @@ A aplicação sincroniza automaticamente os dados com o Supabase:
 A sincronização é **não-bloqueante**, mantendo a interface responsiva. Os dados são salvos localmente via Zustand e sincronizados em segundo plano quando o Supabase está conectado.
 
 **Logs**: Erros de sincronização aparecem no console do navegador com o prefixo `[Auto-sync]`.
+
+### 📑 Paginação de Cards
+
+O sistema agora suporta paginação para gerenciar grandes volumes de leads:
+
+- **Limite Inicial** - Exibe 60 leads por página por padrão.
+- **Customização** - O limite de itens por página pode ser alterado no modal de **Configurações**.
+- **Performance** - Melhora drasticamente o tempo de renderização inicial da lista.
+- **UX** - Mantém o scroll da página limpo e navegável.
 
 ### 🎨 Interface e UX
 

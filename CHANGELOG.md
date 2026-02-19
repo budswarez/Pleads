@@ -5,6 +5,27 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.5.0] - 2026-02-19
+
+### ✨ Novas Funcionalidades
+
+#### 📑 Paginação de Cards
+- **Paginação Client-Side**: Implementada paginação para a grade de leads, exibindo inicialmente 60 cards por página para melhorar a performance de renderização em listas grandes.
+- **Configuração Flexível**: O limite de cards por página agora pode ser ajustado diretamente no painel de Configurações.
+- **Controles Intuitivos**: Adicionados botões de navegação (Anterior/Próxima) e contador de progresso ("Exibindo X–Y de Z leads") no rodapé da grade.
+- **Hook Reutilizável**: Criado `usePagination.ts` para abstrair a lógica de fatiamento e controle de estado da página.
+
+### 🐛 Correções e Melhorias
+
+#### 📍 Extração de Bairros (Curitiba)
+- **Regex Aprimorado**: Refinada a lógica de extração de nomes de bairros para evitar capturar prefixos indesejados (ex: "Loja", "Apartamento") em endereços complexos de Curitiba.
+- **Limpeza de Strings**: Implementada normalização mais rigorosa para garantir que apenas o nome puro do bairro seja extraído e exibido nos filtros.
+
+#### 🧹 Refatoração e IDE
+- **Limpeza de Código**: Removidas declarações de variáveis não utilizadas (ex: `setCurrentPage` no `App.tsx`) para eliminar avisos (warnings) em ambientes de desenvolvimento e IDEs.
+
+---
+
 ## [2.4.2] - 2026-02-12
 
 ### 📱 Melhorias de Responsividade Mobile

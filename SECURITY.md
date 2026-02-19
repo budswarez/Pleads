@@ -351,4 +351,4 @@ Se você está documentando um incidente real com credenciais específicas, cons
 
 ---
 
-**Última atualização**: 2026-02-10 (Credenciais reduzidas para segurança)
+**Última atualização**: 2026-02-19 (Revisão periódica de segurança)

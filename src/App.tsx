@@ -46,7 +46,6 @@ function PaginatedLeadsGrid({
     totalItems,
     goToNextPage,
     goToPreviousPage,
-    setCurrentPage,
   } = usePagination(filteredLeads, leadsPerPage);
 
   return (
