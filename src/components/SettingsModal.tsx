@@ -35,7 +35,8 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setSupabaseConfig, setSupabaseConnected,
     getAllDataForSync, loadFromSupabase,
     appTitle, appDescription, appLogoUrl, setBranding,
-    maxLeadsPerCategory, setMaxLeadsPerCategory
+    maxLeadsPerCategory, setMaxLeadsPerCategory,
+    leadsPerPage, setLeadsPerPage
   } = useStore();
 
   // Google API Key state
@@ -59,6 +60,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const [description, setDescription] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
   const [localMaxLeads, setLocalMaxLeads] = useState(60);
+  const [localLeadsPerPage, setLocalLeadsPerPage] = useState(60);
 
   // Close modal on Escape key
   useEscapeKey(onClose, isOpen);
@@ -72,10 +74,11 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       setDescription(appDescription || '');
       setLogoUrl(appLogoUrl || '');
       setLocalMaxLeads(maxLeadsPerCategory || 60);
+      setLocalLeadsPerPage(leadsPerPage || 60);
       setApiKeySaved(false);
       setSupabaseStatus({ type: null, message: '' });
     }
-  }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey, appTitle, appDescription, appLogoUrl, maxLeadsPerCategory]);
+  }, [isOpen, apiKey, supabaseUrl, supabaseAnonKey, appTitle, appDescription, appLogoUrl, maxLeadsPerCategory, leadsPerPage]);
 
   // Auto-hide success messages
   useEffect(() => {
@@ -250,6 +253,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const handleSaveBranding = () => {
     setBranding(title, description, logoUrl);
     setMaxLeadsPerCategory(Number(localMaxLeads));
+    setLeadsPerPage(Number(localLeadsPerPage));
   };
 
   const hasApiKey = !!getApiKey();
@@ -349,6 +353,25 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 />
                 <p className="text-[10px] text-muted-foreground">
                   Nota: O Google geralmente limita a 60 resultados. Aumentar não garante mais leads.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="leads-per-page" className="text-xs font-medium text-foreground flex items-center gap-1">
+                  Leads por Página
+                  <span className="text-[10px] text-muted-foreground font-normal">(Padrão: 60)</span>
+                </label>
+                <input
+                  id="leads-per-page"
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={localLeadsPerPage}
+                  onChange={(e) => setLocalLeadsPerPage(Number(e.target.value))}
+                  className="w-full bg-input border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  aria-label="Leads exibidos por página"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Quantidade de cards exibidos simultaneamente na tela.
                 </p>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import type { PlaceDetails, Lead } from '../types';
-import { ERROR_MESSAGES, API_ENDPOINTS, GOOGLE_RESULTS_PER_PAGE, PAGINATION_DELAY_MS } from '../constants';
+import { ERROR_MESSAGES, API_ENDPOINTS, GOOGLE_RESULTS_PER_PAGE } from '../constants';
 
 const DEFAULT_GOOGLE_PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY;
 

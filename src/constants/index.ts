@@ -15,6 +15,7 @@ export const PAGINATION_DELAY_MS = 2000;
  * Lead Management Configuration
  */
 export const DEFAULT_MAX_LEADS_PER_CATEGORY = 60;
+export const DEFAULT_LEADS_PER_PAGE = 60;
 export const MAX_NOTE_LENGTH = 5000;
 
 /**

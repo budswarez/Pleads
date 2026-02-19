@@ -82,6 +82,7 @@ export interface StoreState {
   appDescription: string;
   appLogoUrl: string;
   maxLeadsPerCategory: number;
+  leadsPerPage: number;
 
   // Location Management Methods
   addLocation: (city: string, state: string) => boolean;
@@ -123,6 +124,7 @@ export interface StoreState {
   getSupabaseConfig: () => { url: string; anonKey: string; connected: boolean };
   setBranding: (title: string, description: string, logoUrl: string) => void;
   setMaxLeadsPerCategory: (max: number) => void;
+  setLeadsPerPage: (n: number) => void;
 
   // Sync Methods
   getAllDataForSync: () => {

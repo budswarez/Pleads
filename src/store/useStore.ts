@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { StoreState, Lead, Status } from '../types';
-import { DEFAULT_STATUSES, DEFAULT_CATEGORIES, DEFAULT_BRANDING, DEFAULT_MAX_LEADS_PER_CATEGORY, STORAGE_KEYS } from '../constants';
+import { DEFAULT_STATUSES, DEFAULT_CATEGORIES, DEFAULT_BRANDING, DEFAULT_MAX_LEADS_PER_CATEGORY, DEFAULT_LEADS_PER_PAGE, STORAGE_KEYS } from '../constants';
 import { getSupabase, upsertLocation, upsertCategory, upsertStatus, upsertLeads } from '../services/supabaseService';
 
 const useStore = create<StoreState>()(
@@ -40,6 +40,9 @@ const useStore = create<StoreState>()(
       // Search Configuration
       maxLeadsPerCategory: DEFAULT_MAX_LEADS_PER_CATEGORY,
 
+      // Pagination Configuration
+      leadsPerPage: DEFAULT_LEADS_PER_PAGE,
+
       setBranding: (title: string, description: string, logoUrl: string) => {
         set({
           appTitle: title,
@@ -50,6 +53,10 @@ const useStore = create<StoreState>()(
 
       setMaxLeadsPerCategory: (max: number) => {
         set({ maxLeadsPerCategory: max });
+      },
+
+      setLeadsPerPage: (n: number) => {
+        set({ leadsPerPage: n });
       },
 
       // Set API Key
