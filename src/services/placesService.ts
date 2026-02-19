@@ -381,10 +381,67 @@ async function fetchNeighborhoodsDirect(
 }
 
 /**
- * Fetch neighborhoods for a city using two complementary strategies:
+ * Strategy 3 — Type-based: search Google Places with includedType 'sublocality'
+ * and 'neighborhood' to get neighborhoods directly as place entities.
+ */
+async function fetchNeighborhoodsByType(
+  city: string,
+  state: string,
+  key: string
+): Promise<string[]> {
+  const results: string[] = [];
+
+  const types = ['sublocality', 'neighborhood'];
+  const fieldMask = ['places.displayName', 'places.formattedAddress'].join(',');
+
+  const promises = types.map(async (type) => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Goog-FieldMask': fieldMask,
+    };
+    if (key) headers['X-Api-Key'] = key;
+
+    const response = await fetch(API_ENDPOINTS.GOOGLE_PLACES_SEARCH, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        textQuery: `${city}, ${state}, Brasil`,
+        languageCode: 'pt-BR',
+        pageSize: 50,
+        includedType: type,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn(`Warning: Type-based fetch failed for type "${type}": ${response.status}`);
+      return;
+    }
+
+    const data = await response.json() as GoogleNewTextSearchResponse;
+    for (const place of data.places || []) {
+      const displayName = place.displayName?.text?.trim();
+      if (
+        displayName &&
+        displayName.length > 2 &&
+        displayName.toLowerCase() !== city.toLowerCase() &&
+        !/^\d+$/.test(displayName)
+      ) {
+        results.push(displayName);
+      }
+    }
+  });
+
+  await Promise.all(promises);
+  return results;
+}
+
+/**
+ * Fetch neighborhoods for a city using three complementary strategies:
  * 1. Heuristic — Searches for common places (schools, pharmacies, etc.) and extracts
  *    neighborhood from the formatted address.
  * 2. Direct — Searches for "bairros de [city]" via Google Places API.
+ * 3. Type-based — Searches with includedType 'sublocality' / 'neighborhood' to get
+ *    neighborhoods directly as Google place entities.
  *
  * Results are merged with case-insensitive deduplication.
  *
@@ -405,15 +462,16 @@ export async function fetchNeighborhoods(
   }
 
   try {
-    // Run both strategies in parallel
-    const [heuristicResults, directResults] = await Promise.all([
+    // Run all three strategies in parallel
+    const [heuristicResults, directResults, typeResults] = await Promise.all([
       fetchNeighborhoodsHeuristic(city, state, key),
       fetchNeighborhoodsDirect(city, state, key),
+      fetchNeighborhoodsByType(city, state, key),
     ]);
 
     // Case-insensitive deduplication
     const seen = new Map<string, string>(); // lowercase → original casing
-    for (const name of [...heuristicResults, ...directResults]) {
+    for (const name of [...heuristicResults, ...directResults, ...typeResults]) {
       const lower = name.toLowerCase();
       if (!seen.has(lower)) {
         seen.set(lower, name);
@@ -426,3 +484,4 @@ export async function fetchNeighborhoods(
     throw error;
   }
 }
+
