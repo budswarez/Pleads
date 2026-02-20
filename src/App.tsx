@@ -33,6 +33,7 @@ function PaginatedLeadsGrid({
   categories,
   onStatusUpdate,
   onNotesUpdate,
+  onNoteDelete,
 }: {
   filteredLeads: Lead[];
   leadsPerPage: number;
@@ -40,6 +41,7 @@ function PaginatedLeadsGrid({
   categories: Category[];
   onStatusUpdate: (placeId: string, status: string) => void;
   onNotesUpdate: (placeId: string, notes: string) => void;
+  onNoteDelete: (placeId: string, noteId: number) => void;
 }) {
   const {
     paginatedItems,
@@ -61,6 +63,7 @@ function PaginatedLeadsGrid({
             categories={categories}
             onStatusUpdate={onStatusUpdate}
             onNotesUpdate={onNotesUpdate}
+            onNoteDelete={onNoteDelete}
           />
         ))}
       </div>
@@ -144,6 +147,7 @@ function App() {
     removeLeadsByCategory,
     updateLeadStatus,
     updateLeadNotes,
+    deleteLeadNote,
     statuses,
     addStatus,
     removeStatus,
@@ -163,8 +167,8 @@ function App() {
   const { isSearching, searchStatus, handleSearch, stopSearch } = useSearch();
 
   // Mark Supabase as connected and sync data when authenticated
-  // Call Auto-Sync custom hook
-  useAutoSync(isAuthenticated, supabaseReady);
+  // Call Auto-Sync custom hook - reactive to location changes
+  useAutoSync(isAuthenticated, supabaseReady, selectedCity, selectedState);
 
   // Get filtered leads from store
   const baseFilteredLeads = getFilteredLeads();
@@ -191,6 +195,8 @@ function App() {
       return;
     }
 
+    let totalAddedCount = 0;
+
     const result = await handleSearch(
       selectedState,
       selectedCity,
@@ -198,15 +204,23 @@ function App() {
       categories,
       getApiKey(),
       maxLeadsPerCategory,
-      targetCategoryId
+      targetCategoryId,
+      (batch) => {
+        totalAddedCount += addLeads(batch);
+      }
     );
 
-    if (result.success && result.newLeads.length > 0) {
-      const addedCount = addLeads(result.newLeads);
-      const message = result.wasStopped
-        ? `Busca interrompida. ${addedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`
-        : `Varredura concluída! ${addedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`;
-      toast.success(message);
+    if (result.success) {
+      if (totalAddedCount > 0) {
+        const message = result.wasStopped
+          ? `Busca interrompida. ${totalAddedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`
+          : `Varredura concluída! ${totalAddedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`;
+        toast.success(message);
+      } else if (result.newLeads.length > 0) {
+        toast('Todos os leads encontrados já estavam na sua base.', { icon: 'ℹ️' });
+      } else {
+        toast('Nenhum lead novo encontrado.', { icon: 'ℹ️' });
+      }
     } else if (!result.success) {
       toast.error(result.message);
     } else {
@@ -368,6 +382,7 @@ function App() {
               categories={categories}
               onStatusUpdate={updateLeadStatus}
               onNotesUpdate={updateLeadNotes}
+              onNoteDelete={deleteLeadNote}
             />
           )}
         </div>

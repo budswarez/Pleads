@@ -96,6 +96,7 @@ export interface LeadSlice {
   removeLeadsByCategory: (categoryId: string) => void;
   updateLeadStatus: (placeId: string, status: string) => void;
   updateLeadNotes: (placeId: string, noteText: string) => void;
+  deleteLeadNote: (placeId: string, noteId: number) => void;
   getFilteredLeads: () => Lead[];
 }
 

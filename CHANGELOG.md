@@ -5,6 +5,21 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [2.5.1] - 2026-02-19
+
+### ✨ Novas Funcionalidades
+
+#### 🛡️ Busca Resiliente e Performance
+- **Mecanismo de Retry & Skip**: Implementado sistema de nova tentativa automática para falhas de rede na busca de leads. Caso a falha persista, o sistema pula a área problemática e continua a varredura, evitando travamentos.
+- **Otimização de API**: Removidas chamadas redundantes ao Google Places Details. Agora o sistema utiliza o `fieldMask` da API New para obter telefone e website diretamente na busca inicial, reduzindo drasticamente o consumo de cotas e aumentando a velocidade.
+- **Sleep Interruptível**: A função de espera entre requisições agora respeita o comando de "Parar Busca" instantaneamente via `AbortSignal`.
+
+#### 📱 Contato e Gestão de Leads
+- **Contato Inteligente via WhatsApp**: Botão de WhatsApp agora posicionado abaixo do telefone com detecção automática de celular (início 6, 7, 8 ou 9 após o DDD). Botão fica desativado para números fixos.
+- **Exclusão de Anotações**: Adicionada funcionalidade para remover anotações individuais através de um ícone de lixeira com confirmação visual (hover).
+- **Sincronização Reativa**: O sistema agora busca leads do Supabase automaticamente ao trocar de cidade ou estado, garantindo que os dados locais estejam sempre atualizados com a nuvem.
+- **Aumento de Limite de Sync**: Limite de busca no Supabase aumentado de 1000 para 5000 leads para suportar grandes volumes de dados.
+
 ## [2.5.0] - 2026-02-19
 
 ### ✨ Novas Funcionalidades

@@ -1,13 +1,18 @@
 import { useEffect } from 'react';
 import useStore from '../store/useStore';
-import { fetchLeads, fetchLocations, fetchCategories, fetchStatuses, syncAllData } from '../services/supabaseService';
+import { fetchLeads, fetchLocations, fetchCategories, fetchStatuses } from '../services/supabaseService';
 
 /**
  * Hook to automatically synchronize local Zustand state with Supabase
  * Uploads local data first, then downloads any remote changes.
  */
-export function useAutoSync(isAuthenticated: boolean, supabaseReady: boolean) {
-    const { setSupabaseConnected, loadFromSupabase, getAllDataForSync } = useStore();
+export function useAutoSync(
+    isAuthenticated: boolean,
+    supabaseReady: boolean,
+    selectedCity: string | null = null,
+    selectedState: string | null = null
+) {
+    const { setSupabaseConnected, loadFromSupabase } = useStore();
 
     useEffect(() => {
         if (isAuthenticated && supabaseReady) {
@@ -15,13 +20,10 @@ export function useAutoSync(isAuthenticated: boolean, supabaseReady: boolean) {
 
             const autoSync = async () => {
                 try {
-                    // Upload local data first
-                    const localData = getAllDataForSync();
-                    await syncAllData(localData);
-
-                    // Download from Supabase
+                    // Download from Supabase as source of truth
+                    // Passing city/state filters to fetchLeads to ensure we get relevant data efficiently
                     const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
-                        fetchLeads(),
+                        fetchLeads(selectedCity, selectedState),
                         fetchLocations(),
                         fetchCategories(),
                         fetchStatuses()
@@ -40,5 +42,12 @@ export function useAutoSync(isAuthenticated: boolean, supabaseReady: boolean) {
 
             autoSync();
         }
-    }, [isAuthenticated, supabaseReady, setSupabaseConnected, loadFromSupabase, getAllDataForSync]);
+    }, [
+        isAuthenticated,
+        supabaseReady,
+        selectedCity,
+        selectedState,
+        setSupabaseConnected,
+        loadFromSupabase
+    ]);
 }

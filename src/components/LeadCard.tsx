@@ -9,6 +9,7 @@ interface LeadCardProps {
   categories: Category[];
   onStatusUpdate: (placeId: string, status: string) => void;
   onNotesUpdate: (placeId: string, notes: string) => void;
+  onNoteDelete: (placeId: string, noteId: number) => void;
 }
 
 /**
@@ -18,6 +19,24 @@ const openWhatsApp = (phone: string | undefined) => {
   if (!phone) return;
   const cleanPhone = phone.replace(/\D/g, '');
   window.open(`https://wa.me/${cleanPhone}`, '_blank');
+};
+
+/**
+ * Verifica se um número de telefone é de celular (BR)
+ * Critério: após o DDD (2 dígitos) ou DDI+DDD (4 dígitos), o primeiro número deve ser 6, 7, 8 ou 9
+ */
+const isMobileNumber = (phone: string | undefined): boolean => {
+  if (!phone) return false;
+  const cleanPhone = phone.replace(/\D/g, '');
+
+  // Se for 55 (DDI), removemos
+  const digits = cleanPhone.startsWith('55') ? cleanPhone.slice(2) : cleanPhone;
+
+  // Após o DDD (2 dígitos), pegamos o próximo dígito
+  if (digits.length < 3) return false;
+  const firstDigitAfterDDD = digits.charAt(2);
+
+  return ['6', '7', '8', '9'].includes(firstDigitAfterDDD);
 };
 
 /**
@@ -52,7 +71,8 @@ const LeadCard = React.memo(({
   statuses,
   categories,
   onStatusUpdate,
-  onNotesUpdate
+  onNotesUpdate,
+  onNoteDelete
 }: LeadCardProps) => {
   // Obter cor do status
   const getStatusColor = (statusId?: string): string => {
@@ -70,6 +90,7 @@ const LeadCard = React.memo(({
 
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const notesCount = lead.notes ? lead.notes.length : 0;
+  const isMobile = isMobileNumber(lead.phone);
 
   return (
     <div className="bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 flex flex-col hover:shadow-md transition-shadow">
@@ -89,18 +110,6 @@ const LeadCard = React.memo(({
             {getCategoryLabel()}
           </span>
         </div>
-        <div className="flex gap-1">
-          {lead.phone && (
-            <button
-              onClick={() => openWhatsApp(lead.phone)}
-              className="p-1.5 text-muted-foreground hover:text-green-500 transition-colors"
-              title="Abrir WhatsApp"
-              aria-label={`Abrir WhatsApp para ${lead.name}`}
-            >
-              <MessageCircle size={18} />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Informações de contato */}
@@ -115,8 +124,31 @@ const LeadCard = React.memo(({
             <span>{lead.phone}</span>
           </div>
         )}
+
+        {/* Botão de WhatsApp abaixo do telefone */}
+        <div className="mt-1">
+          {isMobile ? (
+            <button
+              onClick={() => openWhatsApp(lead.phone)}
+              className="flex items-center gap-1.5 py-1 px-3 text-[11px] font-semibold text-white bg-green-600 hover:bg-green-700 rounded-full transition-colors shadow-sm"
+              title="Entrar em contato via WhatsApp"
+            >
+              <MessageCircle size={14} />
+              Entrar em contato
+            </button>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 py-1 px-3 text-[11px] font-semibold text-muted-foreground bg-secondary/50 border border-border rounded-full w-fit cursor-not-allowed opacity-70"
+              title="Número fixo ou indisponível para WhatsApp"
+            >
+              <MessageCircle size={14} className="opacity-40" />
+              Sem whatsapp
+            </div>
+          )}
+        </div>
+
         {lead.website && (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs mt-2">
             <Globe size={14} />
             <a
               href={lead.website}
@@ -129,7 +161,9 @@ const LeadCard = React.memo(({
             </a>
           </div>
         )}
-        {renderStars(lead.rating)}
+        <div className="mt-1">
+          {renderStars(lead.rating)}
+        </div>
       </div>
 
       {/* Seção de comentários */}
@@ -178,6 +212,7 @@ const LeadCard = React.memo(({
         onClose={() => setIsNotesModalOpen(false)}
         lead={lead}
         onAddNote={onNotesUpdate}
+        onDeleteNote={onNoteDelete}
       />
     </div>
   );

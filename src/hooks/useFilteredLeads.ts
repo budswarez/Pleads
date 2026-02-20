@@ -5,22 +5,33 @@ import type { Lead, Category, Status } from '../types';
  * Verifica se um lead pertence a uma categoria específica
  * @param lead - Lead a verificar
  * @param categoryId - ID da categoria
+ * @param categories - Lista de categorias disponíveis (para lookup por label)
  * @returns true se o lead pertence à categoria
  */
-const leadMatchesCategory = (lead: Lead, categoryId: string): boolean => {
+const leadMatchesCategory = (lead: Lead, categoryId: string, categories: Category[]): boolean => {
   // Verifica match direto por categoryId
   if (lead.categoryId === categoryId) return true;
 
-  // Fallback: verifica por nome da categoria
+  // Fallback: verifica por nome da categoria (lead.category é o label text)
   const leadCat = lead.category?.toLowerCase() || '';
+  if (!leadCat) return false;
 
-  // Caso especial para restaurantes (pode incluir "food")
-  if (categoryId === 'restaurant') {
-    return leadCat.includes('restaurant') || leadCat.includes('food');
+  // Find the category object to get its label
+  const targetCategory = categories.find(c => c.id === categoryId);
+  if (targetCategory) {
+    const targetLabel = targetCategory.label.toLowerCase();
+    // Match if lead's category label matches the target category's label
+    if (leadCat === targetLabel) return true;
+    // Partial match (e.g. "restaurant" in "restaurantes")
+    if (leadCat.includes(targetLabel) || targetLabel.includes(leadCat)) return true;
   }
 
-  // Match genérico por substring
-  return leadCat.includes(categoryId);
+  // Caso especial para restaurantes (pode incluir "food", "restaurant")
+  if (categoryId === 'restaurant' || (targetCategory && targetCategory.label.toLowerCase().includes('restaurante'))) {
+    return leadCat.includes('restaurant') || leadCat.includes('food') || leadCat.includes('restaurante');
+  }
+
+  return false;
 };
 
 /**
@@ -49,8 +60,8 @@ export const useFilteredLeads = (
       return baseLeads;
     }
 
-    return baseLeads.filter(lead => leadMatchesCategory(lead, activeTab));
-  }, [baseLeads, activeTab]);
+    return baseLeads.filter(lead => leadMatchesCategory(lead, activeTab, categories));
+  }, [baseLeads, activeTab, categories]);
 
   /**
    * Filtra leads pela categoria E status ativos
@@ -72,7 +83,7 @@ export const useFilteredLeads = (
 
     categories.forEach(cat => {
       const count = baseLeads.filter(lead =>
-        leadMatchesCategory(lead, cat.id)
+        leadMatchesCategory(lead, cat.id, categories)
       ).length;
 
       counts.set(cat.id, count);

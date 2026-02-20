@@ -1,23 +1,25 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Lead, Category } from '../types';
-import { searchPlaces, getPlaceDetails, sleep } from '../services/placesService';
+import { searchPlaces, sleep } from '../services/placesService';
 import { PAGINATION_DELAY_MS } from '../constants';
 
 /**
- * Hook para gerenciar a lógica de busca de leads via Google Places API
- * @returns Objeto com estado de busca e função de busca
+ * Hook para gerenciar a lógica de busca de leads via Google Places API.
+ * Usa AbortController para cancelamento real de requisições em andamento.
  */
 export const useSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchStatus, setSearchStatus] = useState('');
-  const stopSearchRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   /**
-   * Para a busca em andamento
+   * Para a busca em andamento — aborta requisições HTTP em voo
    */
-  const stopSearch = () => {
-    stopSearchRef.current = true;
-  };
+  const stopSearch = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
 
   /**
    * Busca leads para uma categoria em um bairro específico (ou cidade toda),
@@ -30,7 +32,8 @@ export const useSearch = () => {
     neighborhood: string | null,
     apiKey: string,
     maxLeads: number,
-    seenPlaceIds: Set<string>
+    seenPlaceIds: Set<string>,
+    signal: AbortSignal
   ): Promise<{ leads: Lead[]; found: number }> => {
     let pageToken: string | null = null;
     let count = 0;
@@ -40,21 +43,53 @@ export const useSearch = () => {
     const areaLabel = neighborhood ? `${cat.label} - ${neighborhood}` : cat.label;
 
     do {
-      if (stopSearchRef.current) break;
+      if (signal.aborted) break;
 
-      const { results, nextPageToken } = await searchPlaces(
-        selectedCity,
-        selectedState,
-        cat.query,
-        pageToken,
-        apiKey,
-        neighborhood
-      );
+      let response;
+      let retryCount = 0;
+      const maxRetries = 1;
+
+      while (retryCount <= maxRetries) {
+        try {
+          response = await searchPlaces(
+            selectedCity,
+            selectedState,
+            cat.query,
+            pageToken,
+            apiKey,
+            neighborhood,
+            signal
+          );
+          break; // Sucesso, sai do loop de retry
+        } catch (error: any) {
+          if (signal.aborted) throw error;
+
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            setSearchStatus(`${areaLabel}: Erro na busca, tentando novamente (${retryCount}/${maxRetries})...`);
+            try {
+              await sleep(2000, signal);
+            } catch (e) {
+              if (signal.aborted) throw error;
+            }
+          } else {
+            console.error(`Falha definitiva ao buscar ${areaLabel}:`, error);
+            setSearchStatus(`${areaLabel}: Erro persistente. Pulando para próxima área...`);
+            try {
+              await sleep(1500, signal); // Dar tempo para ler o status
+            } catch (e) { }
+            return { leads, found }; // Retorna o que já tem e "pula" esta área
+          }
+        }
+      }
+
+      if (!response) break;
+      const { results, nextPageToken } = response;
 
       found += results.length;
 
       for (const lead of results) {
-        if (stopSearchRef.current) break;
+        if (signal.aborted) break;
         if (count >= maxLeads) break;
 
         // Deduplicar por place_id (entre bairros diferentes)
@@ -69,21 +104,6 @@ export const useSearch = () => {
           state: selectedState,
         };
 
-        // A API New já retorna phone/website no Text Search.
-        // Só buscar detalhes se ambos estiverem faltando.
-        if (!lead.phone && !lead.website) {
-          try {
-            const details = await getPlaceDetails(lead.place_id, apiKey);
-            enrichedLead = {
-              ...enrichedLead,
-              phone: details.formatted_phone_number || enrichedLead.phone,
-              website: details.website || enrichedLead.website,
-            };
-          } catch (error) {
-            console.warn(`Failed to get details for ${lead.name}:`, error);
-          }
-        }
-
         leads.push(enrichedLead);
         count++;
 
@@ -94,24 +114,20 @@ export const useSearch = () => {
 
       pageToken = nextPageToken;
 
-      if (pageToken && !stopSearchRef.current) {
-        await sleep(PAGINATION_DELAY_MS);
+      if (pageToken && !signal.aborted) {
+        try {
+          await sleep(PAGINATION_DELAY_MS, signal);
+        } catch (e) {
+          if (signal.aborted) break;
+        }
       }
-    } while (pageToken && !stopSearchRef.current && count < maxLeads);
+    } while (pageToken && !signal.aborted && count < maxLeads);
 
     return { leads, found };
   };
 
   /**
    * Realiza a busca de leads nas categorias especificadas
-   * @param selectedState - Estado selecionado (UF)
-   * @param selectedCity - Cidade selecionada
-   * @param selectedNeighborhoods - Bairros selecionados (vazio = cidade toda)
-   * @param categories - Lista de categorias para buscar
-   * @param apiKey - Chave da API do Google Places
-   * @param maxLeadsPerCategory - Número máximo de leads por categoria
-   * @param targetCategoryId - ID de categoria específica (opcional, senão busca todas)
-   * @returns Objeto com resultado da busca
    */
   const handleSearch = async (
     selectedState: string,
@@ -120,7 +136,8 @@ export const useSearch = () => {
     categories: Category[],
     apiKey: string,
     maxLeadsPerCategory: number,
-    targetCategoryId: string | null = null
+    targetCategoryId: string | null = null,
+    onLeadsFound?: (leads: Lead[]) => void
   ): Promise<{ success: boolean; newLeads: Lead[]; message: string; wasStopped: boolean }> => {
     // Validação de entrada
     if (!selectedState || !selectedCity) {
@@ -132,8 +149,17 @@ export const useSearch = () => {
       };
     }
 
+    // Abortar busca anterior se existir
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Criar novo AbortController para esta busca
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
+
     setIsSearching(true);
-    stopSearchRef.current = false;
 
     let totalFound = 0;
     let totalAdded = 0;
@@ -152,7 +178,7 @@ export const useSearch = () => {
 
       // Buscar em cada categoria
       for (const cat of catsToSearch) {
-        if (stopSearchRef.current) break;
+        if (signal.aborted) break;
 
         const categoryLeads: Lead[] = [];
         const seenPlaceIds = new Set<string>();
@@ -161,7 +187,7 @@ export const useSearch = () => {
 
         // Iterar por cada área (bairro ou cidade toda)
         for (const area of areas) {
-          if (stopSearchRef.current) break;
+          if (signal.aborted) break;
           if (categoryLeads.length >= maxLeadsPerCategory) break;
 
           const remaining = maxLeadsPerCategory - categoryLeads.length;
@@ -173,15 +199,25 @@ export const useSearch = () => {
             area,
             apiKey,
             remaining,
-            seenPlaceIds
+            seenPlaceIds,
+            signal
           );
 
           categoryLeads.push(...leads);
           totalFound += found;
 
+          // Salvamento incremental: notifica o chamador assim que novos leads são encontrados
+          if (onLeadsFound && leads.length > 0) {
+            onLeadsFound(leads);
+          }
+
           // Delay entre bairros
-          if (area !== areas[areas.length - 1] && !stopSearchRef.current) {
-            await sleep(500);
+          if (area !== areas[areas.length - 1] && !signal.aborted) {
+            try {
+              await sleep(500, signal);
+            } catch (e) {
+              if (signal.aborted) break;
+            }
           }
         }
 
@@ -189,14 +225,19 @@ export const useSearch = () => {
         allNewLeads.push(...categoryLeads);
 
         // Delay entre categorias
-        if (!stopSearchRef.current && catsToSearch.indexOf(cat) < catsToSearch.length - 1) {
-          await sleep(500);
+        if (!signal.aborted && catsToSearch.indexOf(cat) < catsToSearch.length - 1) {
+          try {
+            await sleep(500, signal);
+          } catch (e) {
+            if (signal.aborted) break;
+          }
         }
       }
 
       // Montar mensagem de resultado
+      const wasStopped = signal.aborted;
       let message = '';
-      if (stopSearchRef.current) {
+      if (wasStopped) {
         message = `Busca interrompida. ${totalAdded} novos leads adicionados de ${totalFound} encontrados.`;
       } else {
         message = `Varredura concluída! ${totalAdded} novos leads adicionados de ${totalFound} encontrados.`;
@@ -206,9 +247,19 @@ export const useSearch = () => {
         success: true,
         newLeads: allNewLeads,
         message,
-        wasStopped: stopSearchRef.current
+        wasStopped
       };
     } catch (error) {
+      // Se foi abortado pelo usuário, não é um erro real
+      if (signal.aborted) {
+        return {
+          success: true,
+          newLeads: allNewLeads,
+          message: `Busca interrompida. ${totalAdded} novos leads adicionados de ${totalFound} encontrados.`,
+          wasStopped: true
+        };
+      }
+
       console.error('Error during search:', error);
       return {
         success: false,
@@ -219,7 +270,7 @@ export const useSearch = () => {
     } finally {
       setIsSearching(false);
       setSearchStatus('');
-      stopSearchRef.current = false;
+      abortControllerRef.current = null;
     }
   };
 

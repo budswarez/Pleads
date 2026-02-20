@@ -3,6 +3,84 @@ import { ERROR_MESSAGES, GOOGLE_RESULTS_PER_PAGE } from '../constants';
 import { getSupabase } from './supabaseService';
 
 const DEFAULT_GOOGLE_PLACES_KEY = import.meta.env.VITE_GOOGLE_PLACES_KEY;
+const EDGE_FUNCTION_TIMEOUT_MS = 15_000; // 15 seconds max per request
+
+/**
+ * Helper to invoke a Supabase Edge Function via direct fetch(),
+ * bypassing supabase.functions.invoke which doesn't reliably support AbortSignal.
+ */
+async function invokeEdgeFunction(
+  functionName: string,
+  body: Record<string, unknown>,
+  signal?: AbortSignal
+): Promise<any> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  // Get the Supabase project URL from the client
+  // @ts-ignore - accessing internal property
+  const supabaseUrl: string = supabase.supabaseUrl;
+  const url = `${supabaseUrl}/functions/v1/${functionName}`;
+
+  // Get the current session token
+  const { data: { session } } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+
+  // @ts-ignore - accessing internal property for the anon key
+  const supabaseKey: string = supabase.supabaseKey;
+
+  // Combine the user's abort signal with a timeout signal
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), EDGE_FUNCTION_TIMEOUT_MS);
+
+  // Create a combined signal that aborts if EITHER the user cancels or the timeout fires
+  let combinedSignal: AbortSignal;
+  if (signal) {
+    // Use AbortSignal.any if available, otherwise manual approach
+    if ('any' in AbortSignal) {
+      combinedSignal = AbortSignal.any([signal, timeoutController.signal]);
+    } else {
+      // Fallback: listen to user signal to also abort the timeout controller
+      combinedSignal = timeoutController.signal;
+      const onUserAbort = () => timeoutController.abort();
+      signal.addEventListener('abort', onUserAbort, { once: true });
+    }
+  } else {
+    combinedSignal = timeoutController.signal;
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken || supabaseKey}`,
+        'apikey': supabaseKey,
+      },
+      body: JSON.stringify(body),
+      signal: combinedSignal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Edge Function error (${response.status}): ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+
+    // Re-throw abort errors as-is so the search hook can handle them
+    if (error.name === 'AbortError') {
+      throw error;
+    }
+    throw error;
+  }
+}
 
 /**
  * Response from Google Places API (New) - Text Search
@@ -41,13 +119,6 @@ interface GoogleNewPlaceDetailsResponse {
 
 /**
  * Search for places using Google Places API (New) - Text Search
- * @param city - City name
- * @param state - State abbreviation
- * @param category - Business category (optional)
- * @param pageToken - Token for next page (optional)
- * @param apiKey - Google Places API key (optional, falls back to env)
- * @param neighborhood - Neighborhood name (optional)
- * @returns Object with results and next page token
  */
 export async function searchPlaces(
   city: string,
@@ -55,7 +126,8 @@ export async function searchPlaces(
   category: string = 'restaurante',
   pageToken: string | null = null,
   apiKey: string | null = null,
-  neighborhood: string | null = null
+  neighborhood: string | null = null,
+  signal?: AbortSignal
 ): Promise<{ results: Lead[]; nextPageToken: string | null }> {
   const key = apiKey || DEFAULT_GOOGLE_PLACES_KEY;
 
@@ -64,7 +136,6 @@ export async function searchPlaces(
   }
 
   try {
-    // Build search query
     const locationPart = neighborhood
       ? `${neighborhood}, ${city}, ${state}`
       : `${city}, ${state}`;
@@ -94,34 +165,13 @@ export async function searchPlaces(
       requestBody.pageToken = pageToken;
     }
 
-    const supabase = getSupabase();
-    if (!supabase) {
-      throw new Error('Supabase client not initialized');
-    }
-
-    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
-      body: {
-        action: 'textSearch',
-        payload: {
-          requestBody,
-          fieldMask,
-          apiKey: key
-        }
-      }
-    });
-
-    if (error) {
-      if (error.message?.includes('403')) {
-        throw new Error(ERROR_MESSAGES.API_KEY_INVALID);
-      }
-      throw new Error(`API Error: ${error.message}`);
-    }
-
-    const data = responseData as GoogleNewTextSearchResponse;
+    const data = await invokeEdgeFunction('google-places', {
+      action: 'textSearch',
+      payload: { requestBody, fieldMask, apiKey: key }
+    }, signal) as GoogleNewTextSearchResponse;
 
     const places = data.places || [];
 
-    // Map results to our schema
     const results: Lead[] = places.map(place => ({
       place_id: place.id,
       name: place.displayName?.text || '',
@@ -142,6 +192,10 @@ export async function searchPlaces(
       nextPageToken: data.nextPageToken || null,
     };
   } catch (error) {
+    // Don't log abort errors as they are expected
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { results: [], nextPageToken: null };
+    }
     console.error('Error searching places:', error);
     throw error;
   }
@@ -151,8 +205,27 @@ export async function searchPlaces(
  * Utility function to wait (needed between pagination calls per Google's policy)
  * @param ms - Milliseconds to wait
  */
-export const sleep = (ms: number): Promise<void> =>
-  new Promise(resolve => setTimeout(resolve, ms));
+/**
+ * Utility function to wait (needed between pagination calls per Google's policy)
+ * @param ms - Milliseconds to wait
+ * @param signal - Optional AbortSignal to cancel the wait
+ */
+export const sleep = (ms: number, signal?: AbortSignal): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      return reject(new Error('Aborted'));
+    }
+
+    const timeout = setTimeout(resolve, ms);
+
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(timeout);
+        reject(new Error('Aborted'));
+      }, { once: true });
+    }
+  });
+};
 
 /**
  * Get place details by place_id
@@ -162,7 +235,8 @@ export const sleep = (ms: number): Promise<void> =>
  */
 export async function getPlaceDetails(
   placeId: string,
-  apiKey: string | null = null
+  apiKey: string | null = null,
+  signal?: AbortSignal
 ): Promise<PlaceDetails> {
   const key = apiKey || DEFAULT_GOOGLE_PLACES_KEY;
 
@@ -184,30 +258,10 @@ export async function getPlaceDetails(
       'types'
     ].join(',');
 
-    const supabase = getSupabase();
-    if (!supabase) {
-      throw new Error('Supabase client not initialized');
-    }
-
-    const { data: responseData, error } = await supabase.functions.invoke('google-places', {
-      body: {
-        action: 'placeDetails',
-        payload: {
-          placeId,
-          fieldMask,
-          apiKey: key
-        }
-      }
-    });
-
-    if (error) {
-      if (error.message?.includes('403')) {
-        throw new Error(ERROR_MESSAGES.API_KEY_INVALID);
-      }
-      throw new Error(`API Error: ${error.message}`);
-    }
-
-    const data = responseData as GoogleNewPlaceDetailsResponse;
+    const data = await invokeEdgeFunction('google-places', {
+      action: 'placeDetails',
+      payload: { placeId, fieldMask, apiKey: key }
+    }, signal) as GoogleNewPlaceDetailsResponse;
 
     return {
       place_id: data.id,
@@ -221,6 +275,10 @@ export async function getPlaceDetails(
       phone: data.nationalPhoneNumber || undefined,
     };
   } catch (error) {
+    // Don't log abort errors as they are expected
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
     console.error('Error getting place details:', error);
     throw error;
   }

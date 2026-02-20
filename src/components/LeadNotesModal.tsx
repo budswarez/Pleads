@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Send, Clock } from 'lucide-react';
+import { X, Send, Clock, Trash2 } from 'lucide-react';
 import type { Lead } from '../types';
 
 interface LeadNotesModalProps {
@@ -7,9 +7,10 @@ interface LeadNotesModalProps {
     onClose: () => void;
     lead: Lead;
     onAddNote: (placeId: string, text: string) => void;
+    onDeleteNote: (placeId: string, noteId: number) => void;
 }
 
-export default function LeadNotesModal({ isOpen, onClose, lead, onAddNote }: LeadNotesModalProps) {
+export default function LeadNotesModal({ isOpen, onClose, lead, onAddNote, onDeleteNote }: LeadNotesModalProps) {
     const [newNote, setNewNote] = useState('');
 
     if (!isOpen) return null;
@@ -64,8 +65,15 @@ export default function LeadNotesModal({ isOpen, onClose, lead, onAddNote }: Lea
                         </div>
                     ) : (
                         lead.notes.map((note) => (
-                            <div key={note.id} className="bg-card border border-border rounded-lg p-3 shadow-sm">
-                                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{note.text}</p>
+                            <div key={note.id} className="bg-card border border-border rounded-lg p-3 shadow-sm group relative">
+                                <button
+                                    onClick={() => onDeleteNote(lead.place_id, note.id)}
+                                    className="absolute top-2 right-2 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Excluir anotação"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed pr-6">{note.text}</p>
                                 <div className="mt-2 flex items-center text-[10px] text-muted-foreground">
                                     <Clock size={12} className="mr-1" />
                                     {formatDate(note.date)}

@@ -6,7 +6,6 @@ import {
   initSupabase,
   testConnection,
   createTables,
-  syncAllData,
   getCreateTablesSql,
   fetchLeads,
   fetchLocations,
@@ -33,7 +32,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     apiKey, setApiKey, getApiKey,
     supabaseUrl, supabaseAnonKey, supabaseConnected,
     setSupabaseConfig, setSupabaseConnected,
-    getAllDataForSync, loadFromSupabase,
+    loadFromSupabase,
     appTitle, appDescription, appLogoUrl, setBranding,
     maxLeadsPerCategory, setMaxLeadsPerCategory,
     leadsPerPage, setLeadsPerPage
@@ -189,51 +188,27 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setSupabaseStatus({ type: null, message: '' });
 
     try {
-      // Upload local data to Supabase
-      const localData = getAllDataForSync();
-      const uploadResult = await syncAllData(localData);
+      // Fetch data from Supabase to ensure we have the latest
+      const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
+        fetchLeads(),
+        fetchLocations(),
+        fetchCategories(),
+        fetchStatuses()
+      ]);
 
-      if (uploadResult.success) {
-        // Fetch data from Supabase to ensure we have the latest
-        const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
-          fetchLeads(),
-          fetchLocations(),
-          fetchCategories(),
-          fetchStatuses()
-        ]);
+      const hasErrors = [leadsRes, locationsRes, categoriesRes, statusesRes].some(res => res.error);
 
+      if (!hasErrors) {
         loadFromSupabase({
           leads: leadsRes.data,
-          locations: locationsRes.data?.map(l => ({ ...l, id: l.id })),
+          locations: locationsRes.data?.map((l: any) => ({ ...l, id: l.id })),
           categories: categoriesRes.data,
           statuses: statusesRes.data
         });
 
-        setSupabaseStatus({ type: 'success', message: 'Dados sincronizados com sucesso!' });
+        setSupabaseStatus({ type: 'success', message: 'Dados sincronizados e baixados com sucesso!' });
       } else {
-        // Log detailed error information
-        console.error('[Sync Error] Results:', uploadResult.results);
-
-        // Build detailed error message
-        const errorDetails: string[] = [];
-        if (!uploadResult.results.leads.success) {
-          errorDetails.push(`Leads: ${uploadResult.results.leads.error?.message || 'erro desconhecido'}`);
-        }
-        if (!uploadResult.results.locations.success) {
-          errorDetails.push(`Localizações: ${uploadResult.results.locations.error?.message || 'erro desconhecido'}`);
-        }
-        if (!uploadResult.results.categories.success) {
-          errorDetails.push(`Categorias: ${uploadResult.results.categories.error?.message || 'erro desconhecido'}`);
-        }
-        if (!uploadResult.results.statuses.success) {
-          errorDetails.push(`Status: ${uploadResult.results.statuses.error?.message || 'erro desconhecido'}`);
-        }
-
-        const detailedMessage = errorDetails.length > 0
-          ? `${uploadResult.message}\n\nDetalhes:\n${errorDetails.join('\n')}`
-          : uploadResult.message;
-
-        setSupabaseStatus({ type: 'error', message: detailedMessage });
+        setSupabaseStatus({ type: 'error', message: 'Houve um erro ao baixar os dados da nuvem.' });
       }
     } catch (error) {
       setSupabaseStatus({

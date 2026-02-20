@@ -378,8 +378,17 @@ export async function fetchLeads(
     query = query.eq('city', city).eq('state', state);
   }
 
-  const { data, error } = await query.order('created_at', { ascending: false });
-  return { data: (data as Lead[]) || [], error };
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(5000);
+
+  // Map snake_case DB columns to camelCase frontend properties
+  const mappedData = (data || []).map((row: any) => ({
+    ...row,
+    categoryId: row.category_id || row.categoryId || undefined,
+  })) as Lead[];
+
+  return { data: mappedData, error };
 }
 
 /**

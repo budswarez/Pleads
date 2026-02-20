@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
+import toast from 'react-hot-toast';
 import type { StoreState, LeadSlice, Lead } from '../../types';
-import { getSupabase, upsertLeads } from '../../services/supabaseService';
+import { getSupabase, upsertLeads, updateLeadInDb } from '../../services/supabaseService';
 
 export const createLeadSlice: StateCreator<
     StoreState,
@@ -35,12 +36,22 @@ export const createLeadSlice: StateCreator<
         const allLeads = Array.from(existingMap.values());
         set({ leads: allLeads });
 
-        // Auto-sync to Supabase if connected (sync all leads)
+        // Obter apenas os leads que acabaram de ser adicionados/atualizados
+        // (usamos o estado mesclado do existingMap para manter o status/notas atuais)
+        const upsertPayload = newLeads.map(newLead => existingMap.get(newLead.place_id)!);
+
+        // Auto-sync to Supabase if connected
         const { supabaseConnected } = get();
-        if (supabaseConnected && getSupabase() && allLeads.length > 0) {
-            upsertLeads(allLeads).catch(err =>
-                console.error('[Auto-sync] Failed to sync leads:', err)
-            );
+        if (supabaseConnected && getSupabase() && upsertPayload.length > 0) {
+            upsertLeads(upsertPayload).then(({ error }) => {
+                if (error) {
+                    console.error('[Auto-sync] Failed to sync new leads:', error);
+                    toast.error(`Falha ao sincronizar leads com a nuvem: ${error.message}`);
+                }
+            }).catch(err => {
+                console.error('[Auto-sync] Exception syncing new leads:', err);
+                toast.error('Erro inesperado ao sincronizar com a nuvem.');
+            });
         }
 
         return addedCount;
@@ -86,6 +97,13 @@ export const createLeadSlice: StateCreator<
                 lead.place_id === placeId ? { ...lead, status } : lead
             )
         }));
+
+        const { supabaseConnected } = get();
+        if (supabaseConnected && getSupabase()) {
+            updateLeadInDb(placeId, { status }).catch((err: any) =>
+                console.error('[Auto-sync] Failed to sync lead status:', err)
+            );
+        }
     },
 
     updateLeadNotes: (placeId: string, noteText: string) => {
@@ -102,6 +120,39 @@ export const createLeadSlice: StateCreator<
                     : lead
             )
         }));
+
+        const { supabaseConnected, leads } = get();
+        if (supabaseConnected && getSupabase()) {
+            const updatedLead = leads.find(l => l.place_id === placeId);
+            if (updatedLead) {
+                updateLeadInDb(placeId, { notes: updatedLead.notes }).catch((err: any) =>
+                    console.error('[Auto-sync] Failed to sync lead notes:', err)
+                );
+            }
+        }
+    },
+
+    deleteLeadNote: (placeId: string, noteId: number) => {
+        set(prevState => ({
+            leads: prevState.leads.map(lead =>
+                lead.place_id === placeId
+                    ? {
+                        ...lead,
+                        notes: (lead.notes || []).filter(note => note.id !== noteId)
+                    }
+                    : lead
+            )
+        }));
+
+        const { supabaseConnected, leads } = get();
+        if (supabaseConnected && getSupabase()) {
+            const updatedLead = leads.find(l => l.place_id === placeId);
+            if (updatedLead) {
+                updateLeadInDb(placeId, { notes: updatedLead.notes }).catch((err: any) =>
+                    console.error('[Auto-sync] Failed to sync lead note deletion:', err)
+                );
+            }
+        }
     },
 
     getFilteredLeads: (): Lead[] => {

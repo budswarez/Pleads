@@ -39,6 +39,16 @@ export const createStatusCategorySlice: StateCreator<
                 s.id === id ? { ...s, ...updates } : s
             )
         }));
+
+        const { supabaseConnected, statuses } = get();
+        if (supabaseConnected && getSupabase()) {
+            const updatedStatus = statuses.find(s => s.id === id);
+            if (updatedStatus) {
+                upsertStatus(updatedStatus.id, updatedStatus.label, updatedStatus.color).catch(err =>
+                    console.error('[Auto-sync] Failed to sync status update:', err)
+                );
+            }
+        }
     },
 
     addCategory: (label: string, query: string) => {
