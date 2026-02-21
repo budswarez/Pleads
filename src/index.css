@@ -58,6 +58,12 @@
   }
 }
 
+@layer components {
+  .glass-effect {
+    @apply bg-background/60 backdrop-blur-xl border border-border/50;
+  }
+}
+
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

@@ -33,7 +33,7 @@ export function Header({
     const { theme, toggleTheme } = useTheme();
 
     return (
-        <header className="sticky top-0 z-40 w-full mb-6 md:mb-10 px-4 pt-4 bg-background/0">
+        <header className="w-full px-4 pt-4 mb-6 md:mb-10 bg-background/0">
             <div className="max-w-7xl mx-auto glass-effect rounded-2xl p-4 md:p-6 shadow-xl border border-border/50 transition-all duration-300 hover:shadow-primary/5">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 md:gap-8">
