@@ -33,7 +33,8 @@ export const useSearch = () => {
     apiKey: string,
     maxLeads: number,
     seenPlaceIds: Set<string>,
-    signal: AbortSignal
+    signal: AbortSignal,
+    onLeadsFound?: (leads: Lead[]) => void
   ): Promise<{ leads: Lead[]; found: number }> => {
     let pageToken: string | null = null;
     let count = 0;
@@ -88,6 +89,7 @@ export const useSearch = () => {
 
       found += results.length;
 
+      const leadsBeforePage = leads.length;
       for (const lead of results) {
         if (signal.aborted) break;
         if (count >= maxLeads) break;
@@ -108,6 +110,12 @@ export const useSearch = () => {
         count++;
 
         setSearchStatus(`${areaLabel}: ${count}/${maxLeads} leads`);
+      }
+
+      // Notifica o chamador assim que uma página de resultados é processada (Salvamento Incremental + Progresso)
+      const pageLeads = leads.slice(leadsBeforePage);
+      if (onLeadsFound && pageLeads.length > 0) {
+        onLeadsFound(pageLeads);
       }
 
       if (count >= maxLeads) break;
@@ -200,16 +208,19 @@ export const useSearch = () => {
             apiKey,
             remaining,
             seenPlaceIds,
-            signal
+            signal,
+            onLeadsFound
           );
 
           categoryLeads.push(...leads);
           totalFound += found;
 
-          // Salvamento incremental: notifica o chamador assim que novos leads são encontrados
+          // Removido o salvamento incremental aqui pois agora acontece dentro de searchCategoryInArea
+          /*
           if (onLeadsFound && leads.length > 0) {
             onLeadsFound(leads);
           }
+          */
 
           // Delay entre bairros
           if (area !== areas[areas.length - 1] && !signal.aborted) {
