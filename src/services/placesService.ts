@@ -129,20 +129,30 @@ export const fetchNeighborhoods = async (
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-FieldMask': 'places.displayName,nextPageToken',
+          'X-Goog-FieldMask': 'places.displayName,places.types,nextPageToken',
           'X-Api-Key': apiKey
         },
         body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
-        // Se falhar no meio, pelo menos retornamos o que já temos
         if (allNeighborhoodNames.length > 0) break;
         throw new Error('Falha ao buscar bairros');
       }
 
       const data = await response.json();
-      const pageResults = (data.places || []).map((p: any) => p.displayName?.text);
+
+      // Filtra por tipos que representam áreas geográficas/bairros
+      const pageResults = (data.places || [])
+        .filter((p: any) => {
+          const types = p.types || [];
+          return types.includes('neighborhood') ||
+            types.includes('sublocality') ||
+            types.includes('sublocality_level_1') ||
+            types.includes('political');
+        })
+        .map((p: any) => p.displayName?.text);
+
       allNeighborhoodNames.push(...pageResults);
 
       pageToken = data.nextPageToken;
@@ -154,17 +164,22 @@ export const fetchNeighborhoods = async (
       }
     } while (pageToken && pagesFetched < maxPages);
 
-    // Filtragem e limpeza funcional
-    const cityLower = city.toLowerCase();
+    // Filtragem e limpeza robusta
+    const cityLower = city.toLowerCase().trim();
     const filtered = allNeighborhoodNames
       .filter((n: string | undefined) => {
         if (!n) return false;
-        const nLower = n.toLowerCase();
-        // Remove matches exatos com a cidade ou nomes muito genéricos que contenham apenas a cidade
+        const nLower = n.toLowerCase().trim();
+
+        // Remove matches exatos ou variações óbvias da cidade
         if (nLower === cityLower) return false;
-        if (nLower === `bairros de ${cityLower}`) return false;
+        if (nLower.includes(`bairros de ${cityLower}`)) return false;
+        if (nLower === `região de ${cityLower}`) return false;
+        if (nLower === `centro, ${cityLower}`) return true; // Centro é um bairro válido
+
         return true;
       })
+      .map(n => n!.trim())
       .sort() as string[];
 
     return [...new Set(filtered)]; // Diferenciar
