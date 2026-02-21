@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, MapPin, Loader2, Settings } from 'lucide-react';
+import { Search, MapPin, Loader2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
-import { usePagination } from './hooks/usePagination';
+import VirtualLeadsGrid from './components/VirtualLeadsGrid';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
 import SettingsModal from './components/SettingsModal';
 import StatusManagementModal from './components/StatusManagementModal';
 import CategoryManagementModal from './components/CategoryManagementModal';
 import UserManagementModal from './components/UserManagementModal';
-import LeadCard from './components/LeadCard';
 import LoginPage from './components/LoginPage';
 import SetupPage from './components/SetupPage';
 import { ToastProvider } from './components/ToastProvider';
@@ -25,94 +24,8 @@ import { SearchControls } from './components/SearchControls';
 import { FilterTabs } from './components/FilterTabs';
 import { useModals } from './hooks/useModals';
 import { ProgressBar } from './components/ProgressBar';
-import type { Lead, Status, Category } from './types';
 import { EmptyState } from './components/EmptyState';
 
-/**
- * Subcomponent: Paginated grid of LeadCards with navigation controls
- */
-function PaginatedLeadsGrid({
-  filteredLeads,
-  leadsPerPage,
-  statuses,
-  categories,
-  onStatusUpdate,
-  onNotesUpdate,
-  onNoteDelete,
-  onRemoveLead,
-}: {
-  filteredLeads: Lead[];
-  leadsPerPage: number;
-  statuses: Status[];
-  categories: Category[];
-  onStatusUpdate: (placeId: string, status: string) => void;
-  onNotesUpdate: (placeId: string, notes: string) => void;
-  onNoteDelete: (placeId: string, noteId: number) => void;
-  onRemoveLead: (placeId: string) => void;
-}) {
-  const {
-    paginatedItems,
-    currentPage,
-    totalPages,
-    totalItems,
-    goToNextPage,
-    goToPreviousPage,
-  } = usePagination(filteredLeads, leadsPerPage);
-
-  return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {paginatedItems.map((lead) => (
-          <LeadCard
-            key={lead.place_id}
-            lead={lead}
-            statuses={statuses}
-            categories={categories}
-            onStatusUpdate={onStatusUpdate}
-            onNotesUpdate={onNotesUpdate}
-            onNoteDelete={onNoteDelete}
-            onRemoveLead={onRemoveLead}
-          />
-        ))}
-      </div>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-          <span className="text-sm text-muted-foreground">
-            Exibindo {(currentPage - 1) * leadsPerPage + 1}–{Math.min(currentPage * leadsPerPage, totalItems)} de {totalItems} leads
-          </span>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToPreviousPage}
-              disabled={currentPage <= 1}
-              className="p-2 rounded-md text-sm font-medium bg-secondary text-secondary-foreground hover:bg-opacity-80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-              aria-label="Página anterior"
-            >
-              <ChevronLeft size={16} />
-              Anterior
-            </button>
-
-            <span className="text-sm font-medium text-foreground px-3 tabular-nums">
-              {currentPage} / {totalPages}
-            </span>
-
-            <button
-              onClick={goToNextPage}
-              disabled={currentPage >= totalPages}
-              className="p-2 rounded-md text-sm font-medium bg-secondary text-secondary-foreground hover:bg-opacity-80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1"
-              aria-label="Próxima página"
-            >
-              Próxima
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
 
 /**
  * Main application component for PLeads
@@ -187,8 +100,7 @@ function App() {
     appTitle,
     appDescription,
     appLogoUrl,
-    maxLeadsPerCategory,
-    leadsPerPage
+    maxLeadsPerCategory
   } = useStore();
 
   // Custom hooks
@@ -466,9 +378,8 @@ function App() {
               description="Nenhum lead encontrado com os filtros aplicados."
             />
           ) : (
-            <PaginatedLeadsGrid
-              filteredLeads={filteredLeads}
-              leadsPerPage={leadsPerPage}
+            <VirtualLeadsGrid
+              leads={filteredLeads}
               statuses={statuses}
               categories={categories}
               onStatusUpdate={updateLeadStatus}

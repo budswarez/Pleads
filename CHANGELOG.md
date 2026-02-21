@@ -5,6 +5,27 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
  
+## [2.7.0] - 2026-02-21
+
+### ✨ Novas Funcionalidades
+
+#### 🏢 Rebranding: Pichau Power Leads
+- **Nova Identidade**: O projeto foi oficialmente renomeado de "Pichau Energy Leads" para **Pichau Power Leads**.
+- **Branding Premium**: Atualização do título da página, descrições do sistema e logotipo de alta visibilidade em toda a plataforma.
+
+#### 🚀 Performance Extrema (Virtual Scrolling)
+- **Grid Virtualizado**: Implementado `@tanstack/react-virtual` para gerenciar a renderização de leads. O sistema agora suporta milhares de cards sem perda de performance, renderizando apenas o que é visível na tela.
+- **Fim da Paginação**: Substituição do sistema de páginas por uma rolagem infinita e fluida, proporcionando uma experiência de uso mais moderna e rápida.
+
+#### 🎨 UI/UX Redesign
+- **Estética de Vidro (Glassmorphism)**: Aplicação de efeitos de transparência e desfoque em camadas no cabeçalho e containers principais.
+- **Micro-Animações**: Adição de efeitos de "respiração" no logo, transições suaves de hover e gradientes animados para um visual de alta qualidade.
+- **Responsividade Aprimorada**: O grid virtualizado se adapta dinamicamente entre 1, 2 e 3 colunas conforme o tamanho da tela.
+
+### 🐛 Correções e Ajustes
+- **Exportador CSV**: O botão de exportação foi movido para a área de filtros e corrigido para usar a lógica mais robusta de exportação de dados, garantindo arquivos íntegros e bem formatados.
+- **Limpeza de Código**: Removidos hooks e componentes obsoletos de paginação, reduzindo o tamanho do bundle e melhorando a manutenibilidade.
+
 ## [2.6.1] - 2026-02-21
 
 ### ✨ Novas Funcionalidades
