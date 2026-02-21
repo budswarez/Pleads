@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { MapPin, X, Trash2, Search, Plus, Loader2 } from 'lucide-react';
 import useStore from '../store/useStore';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 import { fetchNeighborhoods } from '../services/placesService';
+import { fetchStates, fetchCities, type State, type City } from '../services/brasilApiService';
 import { EmptyState } from './EmptyState';
 
 interface LocationManagementModalProps {
@@ -22,27 +23,53 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
   const [newNeighborhood, setNewNeighborhood] = useState<Record<number, string>>({});
   const [expandedLocationId, setExpandedLocationId] = useState<number | null>(null);
 
+  // States for city/state selection
+  const [availableStates, setAvailableStates] = useState<State[]>([]);
+  const [availableCities, setAvailableCities] = useState<City[]>([]);
+  const [isLoadingStates, setIsLoadingStates] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+
   const { locations, addLocation, removeLocation, updateLocationNeighborhoods, getApiKey } = useStore();
+
+  // Load states on mount
+  useEffect(() => {
+    const loadStates = async () => {
+      setIsLoadingStates(true);
+      const states = await fetchStates();
+      setAvailableStates(states);
+      setIsLoadingStates(false);
+    };
+    loadStates();
+  }, []);
+
+  // Load cities when state changes
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!state) {
+        setAvailableCities([]);
+        return;
+      }
+      setIsLoadingCities(true);
+      const cities = await fetchCities(state);
+      setAvailableCities(cities);
+      setIsLoadingCities(false);
+    };
+    loadCities();
+  }, [state]);
 
   const handleAddLocation = async () => {
     if (!city.trim() || !state.trim()) {
-      toast.error('Por favor, preencha Cidade e Estado');
+      toast.error('Por favor, selecione Cidade e Estado');
       return;
     }
 
     const added = await addLocation(city.trim(), state.trim());
     if (added) {
       setCity('');
-      setState('');
+      // setState(''); // Keep state selected for easier multiple additions in same state
       toast.success(`${city.trim()}, ${state.trim()} adicionado com sucesso!`);
     } else {
       toast.error('Esta localização já foi cadastrada');
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleAddLocation();
     }
   };
 
@@ -74,20 +101,34 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
   };
 
   const handleAddNeighborhood = async (locationId: number) => {
-    const name = newNeighborhood[locationId]?.trim();
-    if (!name) return;
+    const rawInput = newNeighborhood[locationId]?.trim();
+    if (!rawInput) return;
 
     const location = locations.find(l => l.id === locationId);
     if (!location) return;
 
     const existing = location.neighborhoods || [];
-    if (existing.some(n => n.toLowerCase() === name.toLowerCase())) {
-      toast.error('Este bairro já foi cadastrado');
+    const newNames = rawInput
+      .split(',')
+      .map(n => n.trim())
+      .filter(n => n !== '' && !existing.some(ext => ext.toLowerCase() === n.toLowerCase()));
+
+    if (newNames.length === 0) {
+      if (rawInput.includes(',')) {
+        toast.error('Todos esses bairros já foram cadastrados ou a entrada é inválida');
+      } else {
+        toast.error('Este bairro já foi cadastrado');
+      }
       return;
     }
 
-    await updateLocationNeighborhoods(locationId, [...existing, name].sort());
+    const merged = [...existing, ...newNames].sort();
+    await updateLocationNeighborhoods(locationId, merged);
     setNewNeighborhood(prev => ({ ...prev, [locationId]: '' }));
+
+    if (newNames.length > 1) {
+      toast.success(`${newNames.length} bairros adicionados!`);
+    }
   };
 
   const handleRemoveNeighborhood = async (locationId: number, neighborhood: string) => {
@@ -96,6 +137,17 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
 
     const updated = (location.neighborhoods || []).filter(n => n !== neighborhood);
     await updateLocationNeighborhoods(locationId, updated);
+  };
+
+  const handleClearNeighborhoods = async (locationId: number) => {
+    if (window.confirm('Tem certeza que deseja remover TODOS os bairros deste local?')) {
+      try {
+        await updateLocationNeighborhoods(locationId, []);
+        toast.success('Todos os bairros foram removidos.');
+      } catch (error) {
+        toast.error('Erro ao limpar bairros.');
+      }
+    }
   };
 
   // Close modal on Escape key
@@ -131,47 +183,65 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label
-                htmlFor="state-input"
+                htmlFor="state-select"
                 className="block text-sm font-medium text-muted-foreground mb-1"
               >
                 Estado (UF)
               </label>
-              <input
-                id="state-input"
-                type="text"
-                placeholder="SP"
-                maxLength={2}
-                className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring uppercase"
+              <select
+                id="state-select"
+                className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 value={state}
-                onChange={(e) => setState(e.target.value.toUpperCase())}
-                onKeyPress={handleKeyPress}
-                aria-label="Estado (UF)"
-              />
+                onChange={(e) => {
+                  setState(e.target.value);
+                  setCity(''); // Clear city when state changes
+                }}
+                disabled={isLoadingStates}
+              >
+                <option value="">Selecione...</option>
+                {availableStates.map((s) => (
+                  <option key={s.sigla} value={s.sigla}>
+                    {s.nome} ({s.sigla})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label
-                htmlFor="city-input"
+                htmlFor="city-select"
                 className="block text-sm font-medium text-muted-foreground mb-1"
               >
                 Cidade
               </label>
-              <input
-                id="city-input"
-                type="text"
-                placeholder="Ex: São Paulo"
-                className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                onKeyPress={handleKeyPress}
-                aria-label="Cidade"
-              />
+              {isLoadingCities ? (
+                <div className="w-full bg-input border border-input rounded-md px-3 py-2 text-sm flex items-center gap-2 text-muted-foreground">
+                  <Loader2 size={14} className="animate-spin" />
+                  Carregando cidades...
+                </div>
+              ) : (
+                <select
+                  id="city-select"
+                  className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  disabled={!state || availableCities.length === 0}
+                >
+                  <option value="">{state ? 'Selecione a cidade...' : 'Selecione o estado primeiro'}</option>
+                  {availableCities.map((c) => (
+                    <option key={c.codigo_ibge} value={c.nome}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div className="flex items-end">
               <button
                 onClick={handleAddLocation}
-                className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
+                disabled={!city || !state}
+                className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 aria-label="Adicionar localização"
               >
                 <MapPin size={16} />
@@ -217,7 +287,7 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
                             onClick={() => handleFetchNeighborhoods(location)}
                             disabled={isLoading}
                             className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors disabled:opacity-50"
-                            title="Buscar bairros via Google Places"
+                            title="Buscar bairros automaticamente"
                             aria-label={`Buscar bairros de ${location.city}`}
                           >
                             {isLoading ? (
@@ -226,6 +296,17 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
                               <Search size={14} />
                             )}
                           </button>
+
+                          {neighborhoods.length > 0 && (
+                            <button
+                              onClick={() => handleClearNeighborhoods(location.id)}
+                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
+                              title="Limpar todos os bairros"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+
                           <button
                             onClick={async () => {
                               const loadingToast = toast.loading(`Removendo ${location.city}...`);
@@ -249,7 +330,7 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
                           <div className="flex gap-2 mb-2">
                             <input
                               type="text"
-                              placeholder="Adicionar bairro..."
+                              placeholder="Adicionar bairro (separe por vírgula)..."
                               className="flex-1 bg-input text-foreground border border-input rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
                               value={newNeighborhood[location.id] || ''}
                               onChange={(e) => setNewNeighborhood(prev => ({ ...prev, [location.id]: e.target.value }))}

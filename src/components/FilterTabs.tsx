@@ -1,4 +1,6 @@
+import { Download } from 'lucide-react';
 import type { Category, Status, Lead } from '../types';
+import { exportLeadsToCSV } from '../utils/exportUtils';
 
 interface FilterTabsProps {
     hasLocationSelected: boolean;
@@ -27,48 +29,64 @@ export function FilterTabs({
 }: FilterTabsProps) {
     if (!hasLocationSelected || baseFilteredLeads.length === 0) return null;
 
+    const handleExport = () => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        exportLeadsToCSV(baseFilteredLeads, `leads-${timestamp}.csv`);
+    };
+
     return (
         <>
-            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-border">
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setActiveTab('all')}
+                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'all'
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                            }`}
+                        aria-label="Todas as categorias"
+                    >
+                        Todas
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${activeTab === 'all'
+                            ? 'bg-primary-foreground text-primary'
+                            : 'bg-secondary text-secondary-foreground'
+                            }`}>
+                            {baseFilteredLeads.length}
+                        </span>
+                    </button>
+                    {categories.map(cat => {
+                        const count = categoryCounts.get(cat.id) || 0;
+                        const isActive = activeTab === cat.id;
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveTab(cat.id)}
+                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${isActive
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                                    }`}
+                                aria-label={`Filtrar por ${cat.label}`}
+                            >
+                                {cat.label}
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${isActive
+                                    ? 'bg-primary-foreground text-primary'
+                                    : 'bg-secondary text-secondary-foreground'
+                                    }`}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
                 <button
-                    onClick={() => setActiveTab('all')}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'all'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                        }`}
-                    aria-label="Todas as categorias"
+                    onClick={handleExport}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 transition-colors border border-border"
+                    title="Exportar base de leads para CSV"
                 >
-                    Todas
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${activeTab === 'all'
-                        ? 'bg-primary-foreground text-primary'
-                        : 'bg-secondary text-secondary-foreground'
-                        }`}>
-                        {baseFilteredLeads.length}
-                    </span>
+                    <Download size={16} />
+                    Exportar CSV
                 </button>
-                {categories.map(cat => {
-                    const count = categoryCounts.get(cat.id) || 0;
-                    const isActive = activeTab === cat.id;
-                    return (
-                        <button
-                            key={cat.id}
-                            onClick={() => setActiveTab(cat.id)}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${isActive
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                                }`}
-                            aria-label={`Filtrar por ${cat.label}`}
-                        >
-                            {cat.label}
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${isActive
-                                ? 'bg-primary-foreground text-primary'
-                                : 'bg-secondary text-secondary-foreground'
-                                }`}>
-                                {count}
-                            </span>
-                        </button>
-                    );
-                })}
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">

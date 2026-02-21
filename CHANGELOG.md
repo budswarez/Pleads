@@ -5,6 +5,22 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
  
+## [2.6.1] - 2026-02-21
+
+### ✨ Novas Funcionalidades
+
+#### 📍 Gestão Avançada de Locais (BrasilAPI)
+- **Seleção de Cidade/Estado**: Substituído o campo de texto manual por listas de seleção inteligentes alimentadas pela BrasilAPI. Isso elimina erros de digitação e garante que apenas cidades válidas sejam cadastradas.
+- **Carregamento Dinâmico**: As cidades são carregadas automaticamente após a seleção do estado.
+
+#### 📊 Exportação de Dados
+- **Ferramenta de Exportação CSV**: Adicionado botão "Exportar CSV" que converte a base de leads atual em um arquivo compatível com Excel e Google Sheets.
+- **Detalhamento Completo**: O arquivo exportado inclui nome, endereço, telefone, website, categoria, avaliações e todas as notas com data.
+
+#### 🏘️ Experiência do Usuário (UX)
+- **Adição de Bairros em Massa**: Agora é possível cadastrar múltiplos bairros de uma só vez separando-os por vírgula no campo de entrada.
+- **Deduplicação Inteligente**: O sistema remove espaços e evita a adição de bairros duplicados automaticamente.
+
 ## [2.6.0] - 2026-02-21
  
 ### ✨ Novas Funcionalidades

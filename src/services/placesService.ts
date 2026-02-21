@@ -100,9 +100,96 @@ export const searchPlaces = async (
 };
 
 /**
- * Fetch neighborhoods for a city using Google Places API
+ * Fetch neighborhoods for a city using OpenStreetMap (Overpass API) - Primary Source
  */
-export const fetchNeighborhoods = async (
+export const fetchNeighborhoodsFromOSM = async (
+  city: string,
+  state: string
+): Promise<string[]> => {
+  const cleanCity = city.trim();
+
+  // Query Overpass QL:
+  // 1. Busca áreas com o nome da cidade (case-insensitive)
+  // 2. Filtra por admin_level=8 (Município) para evitar estados/províncias (ex: Laguna nas Filipinas)
+  // 3. Tenta garantir que seja do tipo administrativo
+  const query = `
+    [out:json][timeout:30];
+    area["name"~"^${cleanCity}$",i]["admin_level"="8"]["boundary"="administrative"]->.a;
+    (
+      node["place"~"suburb|neighbourhood|sublocality"](area.a);
+      way["place"~"suburb|neighbourhood|sublocality"](area.a);
+      rel["place"~"suburb|neighbourhood|sublocality"](area.a);
+    );
+    out tags;
+  `.trim();
+
+  try {
+    console.log(`[OSM] Buscando bairros para: ${cleanCity} (${state})`);
+
+    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`, {
+      method: 'GET'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Fallback: Se não achou com admin_level=8, tenta sem a restrição de nível (menos seguro, mas abrangente)
+    if (!data.elements || data.elements.length === 0) {
+      console.log(`[OSM] Nenhum resultado com admin_level=8, tentando busca relaxada...`);
+      const relaxedQuery = `
+        [out:json][timeout:25];
+        area["name"~"^${cleanCity}$",i]->.a;
+        (
+          node["place"~"suburb|neighbourhood|sublocality"](area.a);
+          way["place"~"suburb|neighbourhood|sublocality"](area.a);
+          rel["place"~"suburb|neighbourhood|sublocality"](area.a);
+        );
+        out tags;
+      `.trim();
+
+      const relaxedResponse = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(relaxedQuery)}`, {
+        method: 'GET'
+      });
+
+      if (relaxedResponse.ok) {
+        const relaxedData = await relaxedResponse.json();
+        data.elements = relaxedData.elements || [];
+      }
+    }
+
+    console.log(`[OSM] Elementos brutos recebidos:`, data.elements?.length || 0);
+
+    if (!data.elements || data.elements.length === 0) {
+      return [];
+    }
+
+    const neighborhoods = data.elements
+      .map((el: any) => el.tags?.name)
+      .filter((name: string | undefined) => {
+        if (!name) return false;
+        const nLower = name.toLowerCase().trim();
+        const cityLower = cleanCity.toLowerCase();
+        // Evita que o nome da própria cidade ou do estado apareça como bairro
+        return nLower !== cityLower &&
+          nLower !== state.toLowerCase() &&
+          !nLower.includes(`bairros de ${cityLower}`);
+      })
+      .sort() as string[];
+
+    return [...new Set(neighborhoods)];
+  } catch (error) {
+    console.warn('[OSM] Erro na busca:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch neighborhoods for a city using Google Places API - Fallback Source
+ */
+export const fetchNeighborhoodsFromGoogle = async (
   city: string,
   state: string,
   apiKey: string
@@ -110,11 +197,12 @@ export const fetchNeighborhoods = async (
   const allNeighborhoodNames: string[] = [];
   let pageToken: string | null = null;
   let pagesFetched = 0;
-  const maxPages = 3; // Google Places API maximum
+  const maxPages = 2; // Reduzido para fallback mais rápido
 
   try {
     do {
-      const textQuery = `bairros de ${city}, ${state}, Brasil`;
+      const textQuery = `bairros em ${city}, ${state}, Brasil`;
+      console.log(`[Google] Tentando: ${textQuery} (Página ${pagesFetched + 1})`);
 
       const requestBody: any = {
         textQuery,
@@ -129,62 +217,81 @@ export const fetchNeighborhoods = async (
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Goog-FieldMask': 'places.displayName,places.types,nextPageToken',
+          'X-Goog-FieldMask': 'places.displayName,nextPageToken',
           'X-Api-Key': apiKey
         },
         body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        if (allNeighborhoodNames.length > 0) break;
-        throw new Error('Falha ao buscar bairros');
-      }
+      if (!response.ok) break;
 
       const data = await response.json();
+      const results = data.places || [];
+      console.log(`[Google] Recebidos ${results.length} resultados.`);
 
-      // Filtra por tipos que representam áreas geográficas/bairros
-      const pageResults = (data.places || [])
-        .filter((p: any) => {
-          const types = p.types || [];
-          return types.includes('neighborhood') ||
-            types.includes('sublocality') ||
-            types.includes('sublocality_level_1') ||
-            types.includes('political');
-        })
-        .map((p: any) => p.displayName?.text);
-
-      allNeighborhoodNames.push(...pageResults);
+      results.forEach((p: any) => {
+        if (p.displayName?.text) {
+          allNeighborhoodNames.push(p.displayName.text);
+        }
+      });
 
       pageToken = data.nextPageToken;
       pagesFetched++;
 
-      // Delay necessário entre páginas para o Google liberar o próximo token
       if (pageToken && pagesFetched < maxPages) {
-        await sleep(2000);
+        await sleep(1500);
       }
     } while (pageToken && pagesFetched < maxPages);
 
-    // Filtragem e limpeza robusta
     const cityLower = city.toLowerCase().trim();
     const filtered = allNeighborhoodNames
       .filter((n: string | undefined) => {
         if (!n) return false;
         const nLower = n.toLowerCase().trim();
-
-        // Remove matches exatos ou variações óbvias da cidade
         if (nLower === cityLower) return false;
         if (nLower.includes(`bairros de ${cityLower}`)) return false;
         if (nLower === `região de ${cityLower}`) return false;
-        if (nLower === `centro, ${cityLower}`) return true; // Centro é um bairro válido
-
         return true;
       })
       .map(n => n!.trim())
       .sort() as string[];
 
-    return [...new Set(filtered)]; // Diferenciar
+    return [...new Set(filtered)];
   } catch (error) {
-    console.error('Erro ao buscar bairros:', error);
-    throw error;
+    console.error('[Google] Erro no fallback:', error);
+    return [];
+  }
+};
+
+/**
+ * Enhanced fetchNeighborhoods (OSM with Google Fallback)
+ */
+export const fetchNeighborhoods = async (
+  city: string,
+  state: string,
+  apiKey: string
+): Promise<string[]> => {
+  console.group(`Descobrindo bairros: ${city}`);
+  try {
+    // 1. OSM
+    const osmResults = await fetchNeighborhoodsFromOSM(city, state);
+    if (osmResults.length > 5) {
+      console.log(`✓ Usando ${osmResults.length} bairros do OSM.`);
+      console.groupEnd();
+      return osmResults;
+    }
+
+    // 2. Google Fallback
+    console.log('! OSM insuficiente, tentando Google...');
+    const googleResults = await fetchNeighborhoodsFromGoogle(city, state, apiKey);
+
+    const final = googleResults.length > 0 ? googleResults : osmResults;
+    console.log(`✓ Finalizado com ${final.length} bairros.`);
+    console.groupEnd();
+    return final;
+  } catch (error) {
+    console.error('! Falha total na descoberta:', error);
+    console.groupEnd();
+    return [];
   }
 };

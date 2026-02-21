@@ -1,0 +1,1598 @@
+[
+  {
+    "nome": "ABATIÁ",
+    "codigo_ibge": "4100103"
+  },
+  {
+    "nome": "ADRIANÓPOLIS (PARANÁ)",
+    "codigo_ibge": "4100202"
+  },
+  {
+    "nome": "AGUDOS DO SUL",
+    "codigo_ibge": "4100301"
+  },
+  {
+    "nome": "ALMIRANTE TAMANDARÉ (PARANÁ)",
+    "codigo_ibge": "4100400"
+  },
+  {
+    "nome": "ALTAMIRA DO PARANÁ",
+    "codigo_ibge": "4100459"
+  },
+  {
+    "nome": "ALTÔNIA",
+    "codigo_ibge": "4100509"
+  },
+  {
+    "nome": "ALTO PARANÁ",
+    "codigo_ibge": "4100608"
+  },
+  {
+    "nome": "ALTO PIQUIRI",
+    "codigo_ibge": "4100707"
+  },
+  {
+    "nome": "ALVORADA DO SUL",
+    "codigo_ibge": "4100806"
+  },
+  {
+    "nome": "AMAPORÃ",
+    "codigo_ibge": "4100905"
+  },
+  {
+    "nome": "AMPÉRE",
+    "codigo_ibge": "4101002"
+  },
+  {
+    "nome": "ANAHY",
+    "codigo_ibge": "4101051"
+  },
+  {
+    "nome": "ANDIRÁ",
+    "codigo_ibge": "4101101"
+  },
+  {
+    "nome": "ÂNGULO (PARANÁ)",
+    "codigo_ibge": "4101150"
+  },
+  {
+    "nome": "ANTONINA",
+    "codigo_ibge": "4101200"
+  },
+  {
+    "nome": "ANTÔNIO OLINTO (PARANÁ)",
+    "codigo_ibge": "4101309"
+  },
+  {
+    "nome": "APUCARANA",
+    "codigo_ibge": "4101408"
+  },
+  {
+    "nome": "ARAPONGAS",
+    "codigo_ibge": "4101507"
+  },
+  {
+    "nome": "ARAPOTI",
+    "codigo_ibge": "4101606"
+  },
+  {
+    "nome": "ARAPUÃ",
+    "codigo_ibge": "4101655"
+  },
+  {
+    "nome": "ARARUNA (PARANÁ)",
+    "codigo_ibge": "4101705"
+  },
+  {
+    "nome": "ARAUCÁRIA (PARANÁ)",
+    "codigo_ibge": "4101804"
+  },
+  {
+    "nome": "ARIRANHA DO IVAÍ",
+    "codigo_ibge": "4101853"
+  },
+  {
+    "nome": "ASSAÍ",
+    "codigo_ibge": "4101903"
+  },
+  {
+    "nome": "ASSIS CHATEAUBRIAND (PARANÁ)",
+    "codigo_ibge": "4102000"
+  },
+  {
+    "nome": "ASTORGA (PARANÁ)",
+    "codigo_ibge": "4102109"
+  },
+  {
+    "nome": "ATALAIA (PARANÁ)",
+    "codigo_ibge": "4102208"
+  },
+  {
+    "nome": "BALSA NOVA",
+    "codigo_ibge": "4102307"
+  },
+  {
+    "nome": "BANDEIRANTES (PARANÁ)",
+    "codigo_ibge": "4102406"
+  },
+  {
+    "nome": "BARBOSA FERRAZ",
+    "codigo_ibge": "4102505"
+  },
+  {
+    "nome": "BARRACÃO (PARANÁ)",
+    "codigo_ibge": "4102604"
+  },
+  {
+    "nome": "BARRA DO JACARÉ",
+    "codigo_ibge": "4102703"
+  },
+  {
+    "nome": "BELA VISTA DA CAROBA",
+    "codigo_ibge": "4102752"
+  },
+  {
+    "nome": "BELA VISTA DO PARAÍSO",
+    "codigo_ibge": "4102802"
+  },
+  {
+    "nome": "BITURUNA",
+    "codigo_ibge": "4102901"
+  },
+  {
+    "nome": "BOA ESPERANÇA (PARANÁ)",
+    "codigo_ibge": "4103008"
+  },
+  {
+    "nome": "BOA ESPERANÇA DO IGUAÇU",
+    "codigo_ibge": "4103024"
+  },
+  {
+    "nome": "BOA VENTURA DE SÃO ROQUE",
+    "codigo_ibge": "4103040"
+  },
+  {
+    "nome": "BOA VISTA DA APARECIDA",
+    "codigo_ibge": "4103057"
+  },
+  {
+    "nome": "BOCAIÚVA DO SUL",
+    "codigo_ibge": "4103107"
+  },
+  {
+    "nome": "BOM JESUS DO SUL",
+    "codigo_ibge": "4103156"
+  },
+  {
+    "nome": "BOM SUCESSO (PARANÁ)",
+    "codigo_ibge": "4103206"
+  },
+  {
+    "nome": "BOM SUCESSO DO SUL",
+    "codigo_ibge": "4103222"
+  },
+  {
+    "nome": "BORRAZÓPOLIS",
+    "codigo_ibge": "4103305"
+  },
+  {
+    "nome": "BRAGANEY",
+    "codigo_ibge": "4103354"
+  },
+  {
+    "nome": "BRASILÂNDIA DO SUL",
+    "codigo_ibge": "4103370"
+  },
+  {
+    "nome": "CAFEARA",
+    "codigo_ibge": "4103404"
+  },
+  {
+    "nome": "CAFELÂNDIA (PARANÁ)",
+    "codigo_ibge": "4103453"
+  },
+  {
+    "nome": "CAFEZAL DO SUL",
+    "codigo_ibge": "4103479"
+  },
+  {
+    "nome": "CALIFÓRNIA (PARANÁ)",
+    "codigo_ibge": "4103503"
+  },
+  {
+    "nome": "CAMBARÁ",
+    "codigo_ibge": "4103602"
+  },
+  {
+    "nome": "CAMBÉ",
+    "codigo_ibge": "4103701"
+  },
+  {
+    "nome": "CAMBIRA",
+    "codigo_ibge": "4103800"
+  },
+  {
+    "nome": "CAMPINA DA LAGOA",
+    "codigo_ibge": "4103909"
+  },
+  {
+    "nome": "CAMPINA DO SIMÃO",
+    "codigo_ibge": "4103958"
+  },
+  {
+    "nome": "CAMPINA GRANDE DO SUL",
+    "codigo_ibge": "4104006"
+  },
+  {
+    "nome": "CAMPO BONITO",
+    "codigo_ibge": "4104055"
+  },
+  {
+    "nome": "CAMPO DO TENENTE",
+    "codigo_ibge": "4104105"
+  },
+  {
+    "nome": "CAMPO LARGO (PARANÁ)",
+    "codigo_ibge": "4104204"
+  },
+  {
+    "nome": "CAMPO MAGRO",
+    "codigo_ibge": "4104253"
+  },
+  {
+    "nome": "CAMPO MOURÃO",
+    "codigo_ibge": "4104303"
+  },
+  {
+    "nome": "CÂNDIDO DE ABREU",
+    "codigo_ibge": "4104402"
+  },
+  {
+    "nome": "CANDÓI",
+    "codigo_ibge": "4104428"
+  },
+  {
+    "nome": "CANTAGALO (PARANÁ)",
+    "codigo_ibge": "4104451"
+  },
+  {
+    "nome": "CAPANEMA (PARANÁ)",
+    "codigo_ibge": "4104501"
+  },
+  {
+    "nome": "CAPITÃO LEÔNIDAS MARQUES",
+    "codigo_ibge": "4104600"
+  },
+  {
+    "nome": "CARAMBEÍ",
+    "codigo_ibge": "4104659"
+  },
+  {
+    "nome": "CARLÓPOLIS",
+    "codigo_ibge": "4104709"
+  },
+  {
+    "nome": "CASCAVEL (PARANÁ)",
+    "codigo_ibge": "4104808"
+  },
+  {
+    "nome": "CASTRO (PARANÁ)",
+    "codigo_ibge": "4104907"
+  },
+  {
+    "nome": "CATANDUVAS (PARANÁ)",
+    "codigo_ibge": "4105003"
+  },
+  {
+    "nome": "CENTENÁRIO DO SUL",
+    "codigo_ibge": "4105102"
+  },
+  {
+    "nome": "CERRO AZUL (PARANÁ)",
+    "codigo_ibge": "4105201"
+  },
+  {
+    "nome": "CÉU AZUL",
+    "codigo_ibge": "4105300"
+  },
+  {
+    "nome": "CHOPINZINHO",
+    "codigo_ibge": "4105409"
+  },
+  {
+    "nome": "CIANORTE",
+    "codigo_ibge": "4105508"
+  },
+  {
+    "nome": "CIDADE GAÚCHA",
+    "codigo_ibge": "4105607"
+  },
+  {
+    "nome": "CLEVELÂNDIA",
+    "codigo_ibge": "4105706"
+  },
+  {
+    "nome": "COLOMBO (PARANÁ)",
+    "codigo_ibge": "4105805"
+  },
+  {
+    "nome": "COLORADO (PARANÁ)",
+    "codigo_ibge": "4105904"
+  },
+  {
+    "nome": "CONGONHINHAS",
+    "codigo_ibge": "4106001"
+  },
+  {
+    "nome": "CONSELHEIRO MAIRINCK",
+    "codigo_ibge": "4106100"
+  },
+  {
+    "nome": "CONTENDA",
+    "codigo_ibge": "4106209"
+  },
+  {
+    "nome": "CORBÉLIA",
+    "codigo_ibge": "4106308"
+  },
+  {
+    "nome": "CORNÉLIO PROCÓPIO",
+    "codigo_ibge": "4106407"
+  },
+  {
+    "nome": "CORONEL DOMINGOS SOARES",
+    "codigo_ibge": "4106456"
+  },
+  {
+    "nome": "CORONEL VIVIDA",
+    "codigo_ibge": "4106506"
+  },
+  {
+    "nome": "CORUMBATAÍ DO SUL",
+    "codigo_ibge": "4106555"
+  },
+  {
+    "nome": "CRUZEIRO DO IGUAÇU",
+    "codigo_ibge": "4106571"
+  },
+  {
+    "nome": "CRUZEIRO DO OESTE",
+    "codigo_ibge": "4106605"
+  },
+  {
+    "nome": "CRUZEIRO DO SUL (PARANÁ)",
+    "codigo_ibge": "4106704"
+  },
+  {
+    "nome": "CRUZ MACHADO",
+    "codigo_ibge": "4106803"
+  },
+  {
+    "nome": "CRUZMALTINA",
+    "codigo_ibge": "4106852"
+  },
+  {
+    "nome": "CURITIBA",
+    "codigo_ibge": "4106902"
+  },
+  {
+    "nome": "CURIÚVA",
+    "codigo_ibge": "4107009"
+  },
+  {
+    "nome": "DIAMANTE DO NORTE",
+    "codigo_ibge": "4107108"
+  },
+  {
+    "nome": "DIAMANTE DO SUL",
+    "codigo_ibge": "4107124"
+  },
+  {
+    "nome": "DIAMANTE D'OESTE",
+    "codigo_ibge": "4107157"
+  },
+  {
+    "nome": "DOIS VIZINHOS",
+    "codigo_ibge": "4107207"
+  },
+  {
+    "nome": "DOURADINA (PARANÁ)",
+    "codigo_ibge": "4107256"
+  },
+  {
+    "nome": "DOUTOR CAMARGO",
+    "codigo_ibge": "4107306"
+  },
+  {
+    "nome": "ENÉAS MARQUES",
+    "codigo_ibge": "4107405"
+  },
+  {
+    "nome": "ENGENHEIRO BELTRÃO",
+    "codigo_ibge": "4107504"
+  },
+  {
+    "nome": "ESPERANÇA NOVA",
+    "codigo_ibge": "4107520"
+  },
+  {
+    "nome": "ENTRE RIOS DO OESTE",
+    "codigo_ibge": "4107538"
+  },
+  {
+    "nome": "ESPIGÃO ALTO DO IGUAÇU",
+    "codigo_ibge": "4107546"
+  },
+  {
+    "nome": "FAROL (PARANÁ)",
+    "codigo_ibge": "4107553"
+  },
+  {
+    "nome": "FAXINAL",
+    "codigo_ibge": "4107603"
+  },
+  {
+    "nome": "FAZENDA RIO GRANDE",
+    "codigo_ibge": "4107652"
+  },
+  {
+    "nome": "FÊNIX (PARANÁ)",
+    "codigo_ibge": "4107702"
+  },
+  {
+    "nome": "FERNANDES PINHEIRO",
+    "codigo_ibge": "4107736"
+  },
+  {
+    "nome": "FIGUEIRA (PARANÁ)",
+    "codigo_ibge": "4107751"
+  },
+  {
+    "nome": "FLORAÍ",
+    "codigo_ibge": "4107801"
+  },
+  {
+    "nome": "FLOR DA SERRA DO SUL",
+    "codigo_ibge": "4107850"
+  },
+  {
+    "nome": "FLORESTA (PARANÁ)",
+    "codigo_ibge": "4107900"
+  },
+  {
+    "nome": "FLORESTÓPOLIS",
+    "codigo_ibge": "4108007"
+  },
+  {
+    "nome": "FLÓRIDA (PARANÁ)",
+    "codigo_ibge": "4108106"
+  },
+  {
+    "nome": "FORMOSA DO OESTE",
+    "codigo_ibge": "4108205"
+  },
+  {
+    "nome": "FOZ DO IGUAÇU",
+    "codigo_ibge": "4108304"
+  },
+  {
+    "nome": "FRANCISCO ALVES (PARANÁ)",
+    "codigo_ibge": "4108320"
+  },
+  {
+    "nome": "FRANCISCO BELTRÃO",
+    "codigo_ibge": "4108403"
+  },
+  {
+    "nome": "FOZ DO JORDÃO",
+    "codigo_ibge": "4108452"
+  },
+  {
+    "nome": "GENERAL CARNEIRO (PARANÁ)",
+    "codigo_ibge": "4108502"
+  },
+  {
+    "nome": "GODOY MOREIRA",
+    "codigo_ibge": "4108551"
+  },
+  {
+    "nome": "GOIOERÊ",
+    "codigo_ibge": "4108601"
+  },
+  {
+    "nome": "GOIOXIM",
+    "codigo_ibge": "4108650"
+  },
+  {
+    "nome": "GRANDES RIOS",
+    "codigo_ibge": "4108700"
+  },
+  {
+    "nome": "GUAÍRA (PARANÁ)",
+    "codigo_ibge": "4108809"
+  },
+  {
+    "nome": "GUAIRAÇÁ",
+    "codigo_ibge": "4108908"
+  },
+  {
+    "nome": "GUAMIRANGA",
+    "codigo_ibge": "4108957"
+  },
+  {
+    "nome": "GUAPIRAMA",
+    "codigo_ibge": "4109005"
+  },
+  {
+    "nome": "GUAPOREMA",
+    "codigo_ibge": "4109104"
+  },
+  {
+    "nome": "GUARACI (PARANÁ)",
+    "codigo_ibge": "4109203"
+  },
+  {
+    "nome": "GUARANIAÇU",
+    "codigo_ibge": "4109302"
+  },
+  {
+    "nome": "GUARAPUAVA",
+    "codigo_ibge": "4109401"
+  },
+  {
+    "nome": "GUARAQUEÇABA",
+    "codigo_ibge": "4109500"
+  },
+  {
+    "nome": "GUARATUBA",
+    "codigo_ibge": "4109609"
+  },
+  {
+    "nome": "HONÓRIO SERPA",
+    "codigo_ibge": "4109658"
+  },
+  {
+    "nome": "IBAITI",
+    "codigo_ibge": "4109708"
+  },
+  {
+    "nome": "IBEMA",
+    "codigo_ibge": "4109757"
+  },
+  {
+    "nome": "IBIPORÃ",
+    "codigo_ibge": "4109807"
+  },
+  {
+    "nome": "ICARAÍMA",
+    "codigo_ibge": "4109906"
+  },
+  {
+    "nome": "IGUARAÇU",
+    "codigo_ibge": "4110003"
+  },
+  {
+    "nome": "IGUATU (PARANÁ)",
+    "codigo_ibge": "4110052"
+  },
+  {
+    "nome": "IMBAÚ",
+    "codigo_ibge": "4110078"
+  },
+  {
+    "nome": "IMBITUVA",
+    "codigo_ibge": "4110102"
+  },
+  {
+    "nome": "INÁCIO MARTINS",
+    "codigo_ibge": "4110201"
+  },
+  {
+    "nome": "INAJÁ (PARANÁ)",
+    "codigo_ibge": "4110300"
+  },
+  {
+    "nome": "INDIANÓPOLIS (PARANÁ)",
+    "codigo_ibge": "4110409"
+  },
+  {
+    "nome": "IPIRANGA (PARANÁ)",
+    "codigo_ibge": "4110508"
+  },
+  {
+    "nome": "IPORÃ",
+    "codigo_ibge": "4110607"
+  },
+  {
+    "nome": "IRACEMA DO OESTE",
+    "codigo_ibge": "4110656"
+  },
+  {
+    "nome": "IRATI (PARANÁ)",
+    "codigo_ibge": "4110706"
+  },
+  {
+    "nome": "IRETAMA",
+    "codigo_ibge": "4110805"
+  },
+  {
+    "nome": "ITAGUAJÉ",
+    "codigo_ibge": "4110904"
+  },
+  {
+    "nome": "ITAIPULÂNDIA",
+    "codigo_ibge": "4110953"
+  },
+  {
+    "nome": "ITAMBARACÁ",
+    "codigo_ibge": "4111001"
+  },
+  {
+    "nome": "ITAMBÉ (PARANÁ)",
+    "codigo_ibge": "4111100"
+  },
+  {
+    "nome": "ITAPEJARA D'OESTE",
+    "codigo_ibge": "4111209"
+  },
+  {
+    "nome": "ITAPERUÇU",
+    "codigo_ibge": "4111258"
+  },
+  {
+    "nome": "ITAÚNA DO SUL",
+    "codigo_ibge": "4111308"
+  },
+  {
+    "nome": "IVAÍ",
+    "codigo_ibge": "4111407"
+  },
+  {
+    "nome": "IVAIPORÃ",
+    "codigo_ibge": "4111506"
+  },
+  {
+    "nome": "IVATÉ",
+    "codigo_ibge": "4111555"
+  },
+  {
+    "nome": "IVATUBA",
+    "codigo_ibge": "4111605"
+  },
+  {
+    "nome": "JABOTI",
+    "codigo_ibge": "4111704"
+  },
+  {
+    "nome": "JACAREZINHO",
+    "codigo_ibge": "4111803"
+  },
+  {
+    "nome": "JAGUAPITÃ",
+    "codigo_ibge": "4111902"
+  },
+  {
+    "nome": "JAGUARIAÍVA",
+    "codigo_ibge": "4112009"
+  },
+  {
+    "nome": "JANDAIA DO SUL",
+    "codigo_ibge": "4112108"
+  },
+  {
+    "nome": "JANIÓPOLIS",
+    "codigo_ibge": "4112207"
+  },
+  {
+    "nome": "JAPIRA",
+    "codigo_ibge": "4112306"
+  },
+  {
+    "nome": "JAPURÁ (PARANÁ)",
+    "codigo_ibge": "4112405"
+  },
+  {
+    "nome": "JARDIM ALEGRE",
+    "codigo_ibge": "4112504"
+  },
+  {
+    "nome": "JARDIM OLINDA",
+    "codigo_ibge": "4112603"
+  },
+  {
+    "nome": "JATAIZINHO",
+    "codigo_ibge": "4112702"
+  },
+  {
+    "nome": "JESUÍTAS (PARANÁ)",
+    "codigo_ibge": "4112751"
+  },
+  {
+    "nome": "JOAQUIM TÁVORA",
+    "codigo_ibge": "4112801"
+  },
+  {
+    "nome": "JUNDIAÍ DO SUL",
+    "codigo_ibge": "4112900"
+  },
+  {
+    "nome": "JURANDA",
+    "codigo_ibge": "4112959"
+  },
+  {
+    "nome": "JUSSARA (PARANÁ)",
+    "codigo_ibge": "4113007"
+  },
+  {
+    "nome": "KALORÉ",
+    "codigo_ibge": "4113106"
+  },
+  {
+    "nome": "LAPA (PARANÁ)",
+    "codigo_ibge": "4113205"
+  },
+  {
+    "nome": "LARANJAL (PARANÁ)",
+    "codigo_ibge": "4113254"
+  },
+  {
+    "nome": "LARANJEIRAS DO SUL",
+    "codigo_ibge": "4113304"
+  },
+  {
+    "nome": "LEÓPOLIS (PARANÁ)",
+    "codigo_ibge": "4113403"
+  },
+  {
+    "nome": "LIDIANÓPOLIS",
+    "codigo_ibge": "4113429"
+  },
+  {
+    "nome": "LINDOESTE",
+    "codigo_ibge": "4113452"
+  },
+  {
+    "nome": "LOANDA",
+    "codigo_ibge": "4113502"
+  },
+  {
+    "nome": "LOBATO (PARANÁ)",
+    "codigo_ibge": "4113601"
+  },
+  {
+    "nome": "LONDRINA",
+    "codigo_ibge": "4113700"
+  },
+  {
+    "nome": "LUIZIANA",
+    "codigo_ibge": "4113734"
+  },
+  {
+    "nome": "LUNARDELLI",
+    "codigo_ibge": "4113759"
+  },
+  {
+    "nome": "LUPIONÓPOLIS",
+    "codigo_ibge": "4113809"
+  },
+  {
+    "nome": "MALLET",
+    "codigo_ibge": "4113908"
+  },
+  {
+    "nome": "MAMBORÊ",
+    "codigo_ibge": "4114005"
+  },
+  {
+    "nome": "MANDAGUAÇU",
+    "codigo_ibge": "4114104"
+  },
+  {
+    "nome": "MANDAGUARI",
+    "codigo_ibge": "4114203"
+  },
+  {
+    "nome": "MANDIRITUBA",
+    "codigo_ibge": "4114302"
+  },
+  {
+    "nome": "MANFRINÓPOLIS",
+    "codigo_ibge": "4114351"
+  },
+  {
+    "nome": "MANGUEIRINHA",
+    "codigo_ibge": "4114401"
+  },
+  {
+    "nome": "MANOEL RIBAS",
+    "codigo_ibge": "4114500"
+  },
+  {
+    "nome": "MARECHAL CÂNDIDO RONDON (PARANÁ)",
+    "codigo_ibge": "4114609"
+  },
+  {
+    "nome": "MARIA HELENA (PARANÁ)",
+    "codigo_ibge": "4114708"
+  },
+  {
+    "nome": "MARIALVA (PARANÁ)",
+    "codigo_ibge": "4114807"
+  },
+  {
+    "nome": "MARILÂNDIA DO SUL",
+    "codigo_ibge": "4114906"
+  },
+  {
+    "nome": "MARILENA",
+    "codigo_ibge": "4115002"
+  },
+  {
+    "nome": "MARILUZ",
+    "codigo_ibge": "4115101"
+  },
+  {
+    "nome": "MARINGÁ",
+    "codigo_ibge": "4115200"
+  },
+  {
+    "nome": "MARIÓPOLIS",
+    "codigo_ibge": "4115309"
+  },
+  {
+    "nome": "MARIPÁ",
+    "codigo_ibge": "4115358"
+  },
+  {
+    "nome": "MARMELEIRO (PARANÁ)",
+    "codigo_ibge": "4115408"
+  },
+  {
+    "nome": "MARQUINHO",
+    "codigo_ibge": "4115457"
+  },
+  {
+    "nome": "MARUMBI",
+    "codigo_ibge": "4115507"
+  },
+  {
+    "nome": "MATELÂNDIA",
+    "codigo_ibge": "4115606"
+  },
+  {
+    "nome": "MATINHOS",
+    "codigo_ibge": "4115705"
+  },
+  {
+    "nome": "MATO RICO",
+    "codigo_ibge": "4115739"
+  },
+  {
+    "nome": "MAUÁ DA SERRA",
+    "codigo_ibge": "4115754"
+  },
+  {
+    "nome": "MEDIANEIRA (PARANÁ)",
+    "codigo_ibge": "4115804"
+  },
+  {
+    "nome": "MERCEDES (PARANÁ)",
+    "codigo_ibge": "4115853"
+  },
+  {
+    "nome": "MIRADOR (PARANÁ)",
+    "codigo_ibge": "4115903"
+  },
+  {
+    "nome": "MIRASELVA",
+    "codigo_ibge": "4116000"
+  },
+  {
+    "nome": "MISSAL",
+    "codigo_ibge": "4116059"
+  },
+  {
+    "nome": "MOREIRA SALES",
+    "codigo_ibge": "4116109"
+  },
+  {
+    "nome": "MORRETES",
+    "codigo_ibge": "4116208"
+  },
+  {
+    "nome": "MUNHOZ DE MELLO",
+    "codigo_ibge": "4116307"
+  },
+  {
+    "nome": "NOSSA SENHORA DAS GRAÇAS (PARANÁ)",
+    "codigo_ibge": "4116406"
+  },
+  {
+    "nome": "NOVA ALIANÇA DO IVAÍ",
+    "codigo_ibge": "4116505"
+  },
+  {
+    "nome": "NOVA AMÉRICA DA COLINA",
+    "codigo_ibge": "4116604"
+  },
+  {
+    "nome": "NOVA AURORA (PARANÁ)",
+    "codigo_ibge": "4116703"
+  },
+  {
+    "nome": "NOVA CANTU",
+    "codigo_ibge": "4116802"
+  },
+  {
+    "nome": "NOVA ESPERANÇA DO SUDOESTE",
+    "codigo_ibge": "4116901"
+  },
+  {
+    "nome": "NOVA ESPERANÇA",
+    "codigo_ibge": "4116950"
+  },
+  {
+    "nome": "NOVA FÁTIMA (PARANÁ)",
+    "codigo_ibge": "4117008"
+  },
+  {
+    "nome": "NOVA LARANJEIRAS",
+    "codigo_ibge": "4117057"
+  },
+  {
+    "nome": "NOVA LONDRINA",
+    "codigo_ibge": "4117107"
+  },
+  {
+    "nome": "NOVA OLÍMPIA (PARANÁ)",
+    "codigo_ibge": "4117206"
+  },
+  {
+    "nome": "NOVA SANTA BÁRBARA",
+    "codigo_ibge": "4117214"
+  },
+  {
+    "nome": "NOVA SANTA ROSA",
+    "codigo_ibge": "4117222"
+  },
+  {
+    "nome": "NOVA PRATA DO IGUAÇU",
+    "codigo_ibge": "4117255"
+  },
+  {
+    "nome": "NOVA TEBAS",
+    "codigo_ibge": "4117271"
+  },
+  {
+    "nome": "NOVO ITACOLOMI",
+    "codigo_ibge": "4117297"
+  },
+  {
+    "nome": "ORTIGUEIRA (PARANÁ)",
+    "codigo_ibge": "4117305"
+  },
+  {
+    "nome": "OURIZONA",
+    "codigo_ibge": "4117404"
+  },
+  {
+    "nome": "OURO VERDE DO OESTE",
+    "codigo_ibge": "4117453"
+  },
+  {
+    "nome": "PAIÇANDU (PARANÁ)",
+    "codigo_ibge": "4117503"
+  },
+  {
+    "nome": "PALMAS (PARANÁ)",
+    "codigo_ibge": "4117602"
+  },
+  {
+    "nome": "PALMEIRA (PARANÁ)",
+    "codigo_ibge": "4117701"
+  },
+  {
+    "nome": "PALMITAL (PARANÁ)",
+    "codigo_ibge": "4117800"
+  },
+  {
+    "nome": "PALOTINA",
+    "codigo_ibge": "4117909"
+  },
+  {
+    "nome": "PARAÍSO DO NORTE",
+    "codigo_ibge": "4118006"
+  },
+  {
+    "nome": "PARANACITY",
+    "codigo_ibge": "4118105"
+  },
+  {
+    "nome": "PARANAGUÁ",
+    "codigo_ibge": "4118204"
+  },
+  {
+    "nome": "PARANAPOEMA",
+    "codigo_ibge": "4118303"
+  },
+  {
+    "nome": "PARANAVAÍ",
+    "codigo_ibge": "4118402"
+  },
+  {
+    "nome": "PATO BRAGADO",
+    "codigo_ibge": "4118451"
+  },
+  {
+    "nome": "PATO BRANCO",
+    "codigo_ibge": "4118501"
+  },
+  {
+    "nome": "PAULA FREITAS",
+    "codigo_ibge": "4118600"
+  },
+  {
+    "nome": "PAULO FRONTIN",
+    "codigo_ibge": "4118709"
+  },
+  {
+    "nome": "PEABIRU",
+    "codigo_ibge": "4118808"
+  },
+  {
+    "nome": "PEROBAL",
+    "codigo_ibge": "4118857"
+  },
+  {
+    "nome": "PÉROLA (PARANÁ)",
+    "codigo_ibge": "4118907"
+  },
+  {
+    "nome": "PÉROLA D'OESTE",
+    "codigo_ibge": "4119004"
+  },
+  {
+    "nome": "PIÊN",
+    "codigo_ibge": "4119103"
+  },
+  {
+    "nome": "PINHAIS",
+    "codigo_ibge": "4119152"
+  },
+  {
+    "nome": "PINHALÃO",
+    "codigo_ibge": "4119202"
+  },
+  {
+    "nome": "PINHAL DE SÃO BENTO",
+    "codigo_ibge": "4119251"
+  },
+  {
+    "nome": "PINHÃO (PARANÁ)",
+    "codigo_ibge": "4119301"
+  },
+  {
+    "nome": "PIRAÍ DO SUL",
+    "codigo_ibge": "4119400"
+  },
+  {
+    "nome": "PIRAQUARA",
+    "codigo_ibge": "4119509"
+  },
+  {
+    "nome": "PITANGA (PARANÁ)",
+    "codigo_ibge": "4119608"
+  },
+  {
+    "nome": "PITANGUEIRAS (PARANÁ)",
+    "codigo_ibge": "4119657"
+  },
+  {
+    "nome": "PLANALTINA DO PARANÁ",
+    "codigo_ibge": "4119707"
+  },
+  {
+    "nome": "PLANALTO (PARANÁ)",
+    "codigo_ibge": "4119806"
+  },
+  {
+    "nome": "PONTA GROSSA",
+    "codigo_ibge": "4119905"
+  },
+  {
+    "nome": "PONTAL DO PARANÁ",
+    "codigo_ibge": "4119954"
+  },
+  {
+    "nome": "PORECATU",
+    "codigo_ibge": "4120002"
+  },
+  {
+    "nome": "PORTO AMAZONAS",
+    "codigo_ibge": "4120101"
+  },
+  {
+    "nome": "PORTO BARREIRO",
+    "codigo_ibge": "4120150"
+  },
+  {
+    "nome": "PORTO RICO (PARANÁ)",
+    "codigo_ibge": "4120200"
+  },
+  {
+    "nome": "PORTO VITÓRIA",
+    "codigo_ibge": "4120309"
+  },
+  {
+    "nome": "PRADO FERREIRA",
+    "codigo_ibge": "4120333"
+  },
+  {
+    "nome": "PRANCHITA",
+    "codigo_ibge": "4120358"
+  },
+  {
+    "nome": "PRESIDENTE CASTELO BRANCO (PARANÁ)",
+    "codigo_ibge": "4120408"
+  },
+  {
+    "nome": "PRIMEIRO DE MAIO",
+    "codigo_ibge": "4120507"
+  },
+  {
+    "nome": "PRUDENTÓPOLIS",
+    "codigo_ibge": "4120606"
+  },
+  {
+    "nome": "QUARTO CENTENÁRIO",
+    "codigo_ibge": "4120655"
+  },
+  {
+    "nome": "QUATIGUÁ",
+    "codigo_ibge": "4120705"
+  },
+  {
+    "nome": "QUATRO BARRAS",
+    "codigo_ibge": "4120804"
+  },
+  {
+    "nome": "QUATRO PONTES",
+    "codigo_ibge": "4120853"
+  },
+  {
+    "nome": "QUEDAS DO IGUAÇU",
+    "codigo_ibge": "4120903"
+  },
+  {
+    "nome": "QUERÊNCIA DO NORTE",
+    "codigo_ibge": "4121000"
+  },
+  {
+    "nome": "QUINTA DO SOL",
+    "codigo_ibge": "4121109"
+  },
+  {
+    "nome": "QUITANDINHA",
+    "codigo_ibge": "4121208"
+  },
+  {
+    "nome": "RAMILÂNDIA",
+    "codigo_ibge": "4121257"
+  },
+  {
+    "nome": "RANCHO ALEGRE (PARANÁ)",
+    "codigo_ibge": "4121307"
+  },
+  {
+    "nome": "RANCHO ALEGRE D'OESTE",
+    "codigo_ibge": "4121356"
+  },
+  {
+    "nome": "REALEZA (PARANÁ)",
+    "codigo_ibge": "4121406"
+  },
+  {
+    "nome": "REBOUÇAS (PARANÁ)",
+    "codigo_ibge": "4121505"
+  },
+  {
+    "nome": "RENASCENÇA (PARANÁ)",
+    "codigo_ibge": "4121604"
+  },
+  {
+    "nome": "RESERVA (PARANÁ)",
+    "codigo_ibge": "4121703"
+  },
+  {
+    "nome": "RESERVA DO IGUAÇU",
+    "codigo_ibge": "4121752"
+  },
+  {
+    "nome": "RIBEIRÃO CLARO",
+    "codigo_ibge": "4121802"
+  },
+  {
+    "nome": "RIBEIRÃO DO PINHAL",
+    "codigo_ibge": "4121901"
+  },
+  {
+    "nome": "RIO AZUL",
+    "codigo_ibge": "4122008"
+  },
+  {
+    "nome": "RIO BOM",
+    "codigo_ibge": "4122107"
+  },
+  {
+    "nome": "RIO BONITO DO IGUAÇU",
+    "codigo_ibge": "4122156"
+  },
+  {
+    "nome": "RIO BRANCO DO IVAÍ",
+    "codigo_ibge": "4122172"
+  },
+  {
+    "nome": "RIO BRANCO DO SUL",
+    "codigo_ibge": "4122206"
+  },
+  {
+    "nome": "RIO NEGRO (PARANÁ)",
+    "codigo_ibge": "4122305"
+  },
+  {
+    "nome": "ROLÂNDIA",
+    "codigo_ibge": "4122404"
+  },
+  {
+    "nome": "RONCADOR",
+    "codigo_ibge": "4122503"
+  },
+  {
+    "nome": "RONDON (PARANÁ)",
+    "codigo_ibge": "4122602"
+  },
+  {
+    "nome": "ROSÁRIO DO IVAÍ",
+    "codigo_ibge": "4122651"
+  },
+  {
+    "nome": "SABÁUDIA",
+    "codigo_ibge": "4122701"
+  },
+  {
+    "nome": "SALGADO FILHO (PARANÁ)",
+    "codigo_ibge": "4122800"
+  },
+  {
+    "nome": "SALTO DO ITARARÉ",
+    "codigo_ibge": "4122909"
+  },
+  {
+    "nome": "SALTO DO LONTRA",
+    "codigo_ibge": "4123006"
+  },
+  {
+    "nome": "SANTA AMÉLIA",
+    "codigo_ibge": "4123105"
+  },
+  {
+    "nome": "SANTA CECÍLIA DO PAVÃO",
+    "codigo_ibge": "4123204"
+  },
+  {
+    "nome": "SANTA CRUZ DE MONTE CASTELO",
+    "codigo_ibge": "4123303"
+  },
+  {
+    "nome": "SANTA FÉ (PARANÁ)",
+    "codigo_ibge": "4123402"
+  },
+  {
+    "nome": "SANTA HELENA (PARANÁ)",
+    "codigo_ibge": "4123501"
+  },
+  {
+    "nome": "SANTA INÊS (PARANÁ)",
+    "codigo_ibge": "4123600"
+  },
+  {
+    "nome": "SANTA ISABEL DO IVAÍ",
+    "codigo_ibge": "4123709"
+  },
+  {
+    "nome": "SANTA IZABEL DO OESTE",
+    "codigo_ibge": "4123808"
+  },
+  {
+    "nome": "SANTA LÚCIA (PARANÁ)",
+    "codigo_ibge": "4123824"
+  },
+  {
+    "nome": "SANTA MARIA DO OESTE",
+    "codigo_ibge": "4123857"
+  },
+  {
+    "nome": "SANTA MARIANA",
+    "codigo_ibge": "4123907"
+  },
+  {
+    "nome": "SANTA MÔNICA (PARANÁ)",
+    "codigo_ibge": "4123956"
+  },
+  {
+    "nome": "SANTANA DO ITARARÉ",
+    "codigo_ibge": "4124004"
+  },
+  {
+    "nome": "SANTA TEREZA DO OESTE",
+    "codigo_ibge": "4124020"
+  },
+  {
+    "nome": "SANTA TEREZINHA DE ITAIPU",
+    "codigo_ibge": "4124053"
+  },
+  {
+    "nome": "SANTO ANTÔNIO DA PLATINA",
+    "codigo_ibge": "4124103"
+  },
+  {
+    "nome": "SANTO ANTÔNIO DO CAIUÁ",
+    "codigo_ibge": "4124202"
+  },
+  {
+    "nome": "SANTO ANTÔNIO DO PARAÍSO",
+    "codigo_ibge": "4124301"
+  },
+  {
+    "nome": "SANTO ANTÔNIO DO SUDOESTE",
+    "codigo_ibge": "4124400"
+  },
+  {
+    "nome": "SANTO INÁCIO (PARANÁ)",
+    "codigo_ibge": "4124509"
+  },
+  {
+    "nome": "SÃO CARLOS DO IVAÍ",
+    "codigo_ibge": "4124608"
+  },
+  {
+    "nome": "SÃO JERÔNIMO DA SERRA",
+    "codigo_ibge": "4124707"
+  },
+  {
+    "nome": "SÃO JOÃO (PARANÁ)",
+    "codigo_ibge": "4124806"
+  },
+  {
+    "nome": "SÃO JOÃO DO CAIUÁ",
+    "codigo_ibge": "4124905"
+  },
+  {
+    "nome": "SÃO JOÃO DO IVAÍ",
+    "codigo_ibge": "4125001"
+  },
+  {
+    "nome": "SÃO JOÃO DO TRIUNFO",
+    "codigo_ibge": "4125100"
+  },
+  {
+    "nome": "SÃO JORGE D'OESTE",
+    "codigo_ibge": "4125209"
+  },
+  {
+    "nome": "SÃO JORGE DO IVAÍ",
+    "codigo_ibge": "4125308"
+  },
+  {
+    "nome": "SÃO JORGE DO PATROCÍNIO",
+    "codigo_ibge": "4125357"
+  },
+  {
+    "nome": "SÃO JOSÉ DA BOA VISTA",
+    "codigo_ibge": "4125407"
+  },
+  {
+    "nome": "SÃO JOSÉ DAS PALMEIRAS",
+    "codigo_ibge": "4125456"
+  },
+  {
+    "nome": "SÃO JOSÉ DOS PINHAIS",
+    "codigo_ibge": "4125506"
+  },
+  {
+    "nome": "SÃO MANOEL DO PARANÁ",
+    "codigo_ibge": "4125555"
+  },
+  {
+    "nome": "SÃO MATEUS DO SUL",
+    "codigo_ibge": "4125605"
+  },
+  {
+    "nome": "SÃO MIGUEL DO IGUAÇU",
+    "codigo_ibge": "4125704"
+  },
+  {
+    "nome": "SÃO PEDRO DO IGUAÇU",
+    "codigo_ibge": "4125753"
+  },
+  {
+    "nome": "SÃO PEDRO DO IVAÍ",
+    "codigo_ibge": "4125803"
+  },
+  {
+    "nome": "SÃO PEDRO DO PARANÁ",
+    "codigo_ibge": "4125902"
+  },
+  {
+    "nome": "SÃO SEBASTIÃO DA AMOREIRA",
+    "codigo_ibge": "4126009"
+  },
+  {
+    "nome": "SÃO TOMÉ (PARANÁ)",
+    "codigo_ibge": "4126108"
+  },
+  {
+    "nome": "SAPOPEMA",
+    "codigo_ibge": "4126207"
+  },
+  {
+    "nome": "SARANDI (PARANÁ)",
+    "codigo_ibge": "4126256"
+  },
+  {
+    "nome": "SAUDADE DO IGUAÇU",
+    "codigo_ibge": "4126272"
+  },
+  {
+    "nome": "SENGÉS",
+    "codigo_ibge": "4126306"
+  },
+  {
+    "nome": "SERRANÓPOLIS DO IGUAÇU",
+    "codigo_ibge": "4126355"
+  },
+  {
+    "nome": "SERTANEJA",
+    "codigo_ibge": "4126405"
+  },
+  {
+    "nome": "SERTANÓPOLIS",
+    "codigo_ibge": "4126504"
+  },
+  {
+    "nome": "SIQUEIRA CAMPOS (PARANÁ)",
+    "codigo_ibge": "4126603"
+  },
+  {
+    "nome": "SULINA",
+    "codigo_ibge": "4126652"
+  },
+  {
+    "nome": "TAMARANA",
+    "codigo_ibge": "4126678"
+  },
+  {
+    "nome": "TAMBOARA",
+    "codigo_ibge": "4126702"
+  },
+  {
+    "nome": "TAPEJARA (PARANÁ)",
+    "codigo_ibge": "4126801"
+  },
+  {
+    "nome": "TAPIRA (PARANÁ)",
+    "codigo_ibge": "4126900"
+  },
+  {
+    "nome": "TEIXEIRA SOARES",
+    "codigo_ibge": "4127007"
+  },
+  {
+    "nome": "TELÊMACO BORBA",
+    "codigo_ibge": "4127106"
+  },
+  {
+    "nome": "TERRA BOA",
+    "codigo_ibge": "4127205"
+  },
+  {
+    "nome": "TERRA RICA",
+    "codigo_ibge": "4127304"
+  },
+  {
+    "nome": "TERRA ROXA (PARANÁ)",
+    "codigo_ibge": "4127403"
+  },
+  {
+    "nome": "TIBAGI",
+    "codigo_ibge": "4127502"
+  },
+  {
+    "nome": "TIJUCAS DO SUL",
+    "codigo_ibge": "4127601"
+  },
+  {
+    "nome": "TOLEDO (PARANÁ)",
+    "codigo_ibge": "4127700"
+  },
+  {
+    "nome": "TOMAZINA",
+    "codigo_ibge": "4127809"
+  },
+  {
+    "nome": "TRÊS BARRAS DO PARANÁ",
+    "codigo_ibge": "4127858"
+  },
+  {
+    "nome": "TUNAS DO PARANÁ",
+    "codigo_ibge": "4127882"
+  },
+  {
+    "nome": "TUNEIRAS DO OESTE",
+    "codigo_ibge": "4127908"
+  },
+  {
+    "nome": "TUPÃSSI",
+    "codigo_ibge": "4127957"
+  },
+  {
+    "nome": "TURVO (PARANÁ)",
+    "codigo_ibge": "4127965"
+  },
+  {
+    "nome": "UBIRATÃ",
+    "codigo_ibge": "4128005"
+  },
+  {
+    "nome": "UMUARAMA",
+    "codigo_ibge": "4128104"
+  },
+  {
+    "nome": "UNIÃO DA VITÓRIA",
+    "codigo_ibge": "4128203"
+  },
+  {
+    "nome": "UNIFLOR",
+    "codigo_ibge": "4128302"
+  },
+  {
+    "nome": "URAÍ",
+    "codigo_ibge": "4128401"
+  },
+  {
+    "nome": "WENCESLAU BRAZ (PARANÁ)",
+    "codigo_ibge": "4128500"
+  },
+  {
+    "nome": "VENTANIA (PARANÁ)",
+    "codigo_ibge": "4128534"
+  },
+  {
+    "nome": "VERA CRUZ DO OESTE",
+    "codigo_ibge": "4128559"
+  },
+  {
+    "nome": "VERÊ",
+    "codigo_ibge": "4128609"
+  },
+  {
+    "nome": "ALTO PARAÍSO (PARANÁ)",
+    "codigo_ibge": "4128625"
+  },
+  {
+    "nome": "DOUTOR ULYSSES",
+    "codigo_ibge": "4128633"
+  },
+  {
+    "nome": "VIRMOND",
+    "codigo_ibge": "4128658"
+  },
+  {
+    "nome": "VITORINO (PARANÁ)",
+    "codigo_ibge": "4128708"
+  },
+  {
+    "nome": "XAMBRÊ",
+    "codigo_ibge": "4128807"
+  }
+]
