@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import LeadCard from './LeadCard';
 import type { Lead, Status, Category } from '../types';
+import useStore from '../store/useStore';
 
 interface VirtualLeadsGridProps {
     leads: Lead[];
@@ -23,12 +24,17 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     onRemoveLead,
 }) => {
     const parentRef = useRef<HTMLDivElement>(null);
+    const { leadsViewMode } = useStore();
     const [columns, setColumns] = useState(1);
 
     // Update columns based on container width
     useEffect(() => {
         const updateColumns = () => {
             if (!parentRef.current) return;
+            if (leadsViewMode === 'list') {
+                setColumns(1);
+                return;
+            }
             const width = parentRef.current.offsetWidth;
             if (width >= 1024) setColumns(3); // lg
             else if (width >= 768) setColumns(2); // md
@@ -38,7 +44,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
         updateColumns();
         window.addEventListener('resize', updateColumns);
         return () => window.removeEventListener('resize', updateColumns);
-    }, []);
+    }, [leadsViewMode]);
 
     // Group leads into rows
     const rows = useMemo(() => {
@@ -53,8 +59,8 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 380, // Estimated height of a LeadCard + gap
-        overscan: 3,
+        estimateSize: () => leadsViewMode === 'grid' ? 380 : 180, // Lower height for list items
+        overscan: 5,
     });
 
     return (
@@ -91,7 +97,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
                             }}
                         >
                             {rows[virtualRow.index].map((lead) => (
-                                <div key={lead.place_id} className="pb-6">
+                                <div key={lead.place_id} className={leadsViewMode === 'grid' ? "pb-6" : "pb-3"}>
                                     <LeadCard
                                         lead={lead}
                                         statuses={statuses}
@@ -100,6 +106,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
                                         onNotesUpdate={onNotesUpdate}
                                         onNoteDelete={onNoteDelete}
                                         onRemoveLead={onRemoveLead}
+                                        viewMode={leadsViewMode}
                                     />
                                 </div>
                             ))}

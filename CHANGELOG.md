@@ -18,6 +18,8 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Fim da Paginação**: Substituição do sistema de páginas por uma rolagem infinita e fluida, proporcionando uma experiência de uso mais moderna e rápida.
 
 #### 🎨 UI/UX Redesign
+- **Modos de Visualização**: Adicionada opção para alternar entre **Grade** e **Lista**. 
+- **Lista Compacta**: O novo modo lista oculta automaticamente sites e avaliações por estrelas, focando na densidade de informação e facilidade de contato.
 - **Estética de Vidro (Glassmorphism)**: Aplicação de efeitos de transparência e desfoque em camadas no cabeçalho e containers principais.
 - **Micro-Animações**: Adição de efeitos de "respiração" no logo, transições suaves de hover e gradientes animados para um visual de alta qualidade.
 - **Responsividade Aprimorada**: O grid virtualizado se adapta dinamicamente entre 1, 2 e 3 colunas conforme o tamanho da tela.

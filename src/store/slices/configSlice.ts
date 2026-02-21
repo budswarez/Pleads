@@ -12,6 +12,7 @@ export const createConfigSlice: StateCreator<StoreState, [], [], ConfigSlice> = 
   appLogoUrl: '/logo.png',
   maxLeadsPerCategory: 60,
   leadsPerPage: 60,
+  leadsViewMode: 'grid',
 
   setApiKey: async (key) => {
     const { supabaseConnected } = get();
@@ -74,6 +75,7 @@ export const createConfigSlice: StateCreator<StoreState, [], [], ConfigSlice> = 
     }
     set({ leadsPerPage: n });
   },
+  setLeadsViewMode: (mode) => set({ leadsViewMode: mode }),
 
   getAllDataForSync: () => {
     const { leads, locations, categories, statuses } = get();

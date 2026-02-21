@@ -1,5 +1,7 @@
+import { LayoutGrid, List } from 'lucide-react';
 import type { Category, Status, Lead } from '../types';
 import { ExportButton } from './ExportButton';
+import useStore from '../store/useStore';
 
 interface FilterTabsProps {
     hasLocationSelected: boolean;
@@ -28,6 +30,7 @@ export function FilterTabs({
     setActiveStatus,
     isSearching
 }: FilterTabsProps) {
+    const { leadsViewMode, setLeadsViewMode } = useStore();
     if (!hasLocationSelected || baseFilteredLeads.length === 0) return null;
 
 
@@ -76,7 +79,34 @@ export function FilterTabs({
                     })}
                 </div>
 
-                <ExportButton leads={baseFilteredLeads} disabled={isSearching} />
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-secondary/30 rounded-lg p-1 border border-border">
+                        <button
+                            onClick={() => setLeadsViewMode('grid')}
+                            className={`p-1.5 rounded-md transition-all ${leadsViewMode === 'grid'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            title="Visualização em Grade"
+                            aria-label="Grade"
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                        <button
+                            onClick={() => setLeadsViewMode('list')}
+                            className={`p-1.5 rounded-md transition-all ${leadsViewMode === 'list'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                            title="Visualização em Lista"
+                            aria-label="Lista"
+                        >
+                            <List size={18} />
+                        </button>
+                    </div>
+
+                    <ExportButton leads={baseFilteredLeads} disabled={isSearching} />
+                </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">

@@ -127,6 +127,7 @@ export interface ConfigSlice {
   appLogoUrl: string;
   maxLeadsPerCategory: number;
   leadsPerPage: number;
+  leadsViewMode: 'grid' | 'list';
 
   // Configuration Methods
   setApiKey: (key: string) => Promise<void>;
@@ -137,6 +138,7 @@ export interface ConfigSlice {
   setBranding: (title: string, description: string, logoUrl: string) => Promise<void>;
   setMaxLeadsPerCategory: (max: number) => Promise<void>;
   setLeadsPerPage: (n: number) => Promise<void>;
+  setLeadsViewMode: (mode: 'grid' | 'list') => void;
 
   // Sync Methods
   getAllDataForSync: () => {
