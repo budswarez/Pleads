@@ -26,7 +26,12 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     const parentRef = useRef<HTMLDivElement>(null);
     const { leadsViewMode } = useStore();
     const [columns, setColumns] = useState(1);
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return window.innerWidth < 768;
+        }
+        return false;
+    });
 
     // Update columns based on container width
     useEffect(() => {
@@ -65,7 +70,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
         getScrollElement: () => parentRef.current,
         estimateSize: () => {
             if (leadsViewMode === 'grid') return 380;
-            return isMobile ? 140 : 80; // Adjusted for a more compact vertical stack
+            return isMobile ? 160 : 80; // Adjusted for a safe vertical stack on mobile
         },
         overscan: 10,
     });
@@ -73,6 +78,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     return (
         <div
             ref={parentRef}
+            key={`${leadsViewMode}-${isMobile}`}
             className="h-[calc(100vh-280px)] min-h-[500px] overflow-auto rounded-xl border border-border/50 bg-background/20 p-1 md:p-4 custom-scrollbar"
             style={{
                 contain: 'strict',
