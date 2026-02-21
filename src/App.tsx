@@ -439,6 +439,7 @@ function App() {
             statusCounts={statusCounts}
             activeStatus={activeStatus}
             setActiveStatus={setActiveStatus}
+            isSearching={isSearching}
           />
 
           {/* Empty States and Leads Grid */}

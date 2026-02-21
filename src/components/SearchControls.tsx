@@ -1,6 +1,5 @@
 import { Search, ChevronDown, Square, Filter, FilterX, Loader2 } from 'lucide-react';
 import type { Category, Lead } from '../types';
-import { ExportButton } from './ExportButton';
 
 interface SearchControlsProps {
     hasLocationSelected: boolean;
@@ -139,7 +138,6 @@ export function SearchControls({
                     </button>
                 )}
 
-                <ExportButton leads={baseFilteredLeads} disabled={isSearching} />
 
                 {baseFilteredLeads.length > 0 && !isSearching && (
                     <button

@@ -1,6 +1,5 @@
-import { Download } from 'lucide-react';
 import type { Category, Status, Lead } from '../types';
-import { exportLeadsToCSV } from '../utils/exportUtils';
+import { ExportButton } from './ExportButton';
 
 interface FilterTabsProps {
     hasLocationSelected: boolean;
@@ -13,6 +12,7 @@ interface FilterTabsProps {
     statusCounts: Map<string, number>;
     activeStatus: string | null;
     setActiveStatus: (status: string | null) => void;
+    isSearching: boolean;
 }
 
 export function FilterTabs({
@@ -25,14 +25,11 @@ export function FilterTabs({
     statuses,
     statusCounts,
     activeStatus,
-    setActiveStatus
+    setActiveStatus,
+    isSearching
 }: FilterTabsProps) {
     if (!hasLocationSelected || baseFilteredLeads.length === 0) return null;
 
-    const handleExport = () => {
-        const timestamp = new Date().toISOString().split('T')[0];
-        exportLeadsToCSV(baseFilteredLeads, `leads-${timestamp}.csv`);
-    };
 
     return (
         <>
@@ -79,14 +76,7 @@ export function FilterTabs({
                     })}
                 </div>
 
-                <button
-                    onClick={handleExport}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm font-medium hover:bg-secondary/80 transition-colors border border-border"
-                    title="Exportar base de leads para CSV"
-                >
-                    <Download size={16} />
-                    Exportar CSV
-                </button>
+                <ExportButton leads={baseFilteredLeads} disabled={isSearching} />
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
