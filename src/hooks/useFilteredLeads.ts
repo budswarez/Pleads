@@ -70,7 +70,7 @@ export const useFilteredLeads = (
    */
   const leadsByName = useMemo(() => {
     if (!nameFilter.trim()) return leadsByCategory;
-    
+
     const lowerFilter = nameFilter.toLowerCase().trim();
     return leadsByCategory.filter(lead => lead.name.toLowerCase().includes(lowerFilter));
   }, [leadsByCategory, nameFilter]);
@@ -79,11 +79,12 @@ export const useFilteredLeads = (
    * Filtra leads pela categoria E status ativos
    */
   const finalFilteredLeads = useMemo(() => {
-    if (!activeStatus || activeStatus === 'all') {
-      return leadsByName;
-    }
+    const filtered = (!activeStatus || activeStatus === 'all')
+      ? leadsByName
+      : leadsByName.filter(lead => lead.status === activeStatus);
 
-    return leadsByName.filter(lead => lead.status === activeStatus);
+    // Ordenar por ordem alfabética (case-insensitive e com suporte a acentos)
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   }, [leadsByName, activeStatus]);
 
   /**
