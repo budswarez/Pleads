@@ -107,32 +107,69 @@ export const fetchNeighborhoods = async (
   state: string,
   apiKey: string
 ): Promise<string[]> => {
-  const textQuery = `bairros de ${city}, ${state}, Brasil`;
-  
-  const response = await fetch('/api/places-search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-FieldMask': 'places.displayName',
-      'X-Api-Key': apiKey
-    },
-    body: JSON.stringify({
-      textQuery,
-      pageSize: 20 // Fetch up to 20 neighborhoods
-    })
-  });
+  const allNeighborhoodNames: string[] = [];
+  let pageToken: string | null = null;
+  let pagesFetched = 0;
+  const maxPages = 3; // Google Places API maximum
 
-  if (!response.ok) {
-    throw new Error('Falha ao buscar bairros');
+  try {
+    do {
+      const textQuery = `bairros de ${city}, ${state}, Brasil`;
+
+      const requestBody: any = {
+        textQuery,
+        pageSize: 20
+      };
+
+      if (pageToken) {
+        requestBody.pageToken = pageToken;
+      }
+
+      const response = await fetch('/api/places-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-FieldMask': 'places.displayName,nextPageToken',
+          'X-Api-Key': apiKey
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        // Se falhar no meio, pelo menos retornamos o que já temos
+        if (allNeighborhoodNames.length > 0) break;
+        throw new Error('Falha ao buscar bairros');
+      }
+
+      const data = await response.json();
+      const pageResults = (data.places || []).map((p: any) => p.displayName?.text);
+      allNeighborhoodNames.push(...pageResults);
+
+      pageToken = data.nextPageToken;
+      pagesFetched++;
+
+      // Delay necessário entre páginas para o Google liberar o próximo token
+      if (pageToken && pagesFetched < maxPages) {
+        await sleep(2000);
+      }
+    } while (pageToken && pagesFetched < maxPages);
+
+    // Filtragem e limpeza funcional
+    const cityLower = city.toLowerCase();
+    const filtered = allNeighborhoodNames
+      .filter((n: string | undefined) => {
+        if (!n) return false;
+        const nLower = n.toLowerCase();
+        // Remove matches exatos com a cidade ou nomes muito genéricos que contenham apenas a cidade
+        if (nLower === cityLower) return false;
+        if (nLower === `bairros de ${cityLower}`) return false;
+        return true;
+      })
+      .sort() as string[];
+
+    return [...new Set(filtered)]; // Diferenciar
+  } catch (error) {
+    console.error('Erro ao buscar bairros:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  
-  // Extract neighborhood names and clean them up
-  const neighborhoods = (data.places || [])
-    .map((p: any) => p.displayName?.text)
-    .filter((n: string | undefined) => n && !n.includes(city)) // Simple filter
-    .sort() as string[];
-
-  return [...new Set(neighborhoods)]; // Deduplicate
 };
