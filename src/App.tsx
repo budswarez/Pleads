@@ -15,7 +15,7 @@ import { ToastProvider } from './components/ToastProvider';
 import useStore from './store/useStore';
 import { initSupabase } from './services/supabaseService';
 import { useSearch } from './hooks/useSearch';
-import { useFilteredLeads } from './hooks/useFilteredLeads';
+import { useFilteredLeads, type PhoneFilter } from './hooks/useFilteredLeads';
 import { useEscapeKey } from './hooks/useEscapeKey';
 import { useAuth } from './hooks/useAuth';
 import { useAutoSync } from './hooks/useAutoSync';
@@ -72,6 +72,7 @@ function App() {
   // UI states
   const [activeTab, setActiveTab] = useState('all');
   const [activeStatus, setActiveStatus] = useState<string | null>('all');
+  const [phoneFilter, setPhoneFilter] = useState<PhoneFilter>('all');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [nameFilter, setNameFilter] = useState('');
   const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0 });
@@ -115,13 +116,14 @@ function App() {
   const hasLocationSelected = !!(selectedState && selectedCity);
 
   // Use filtering hook
-  const { filteredLeads, categoryCounts, statusCounts } = useFilteredLeads(
+  const { filteredLeads, categoryCounts, statusCounts, phoneCounts } = useFilteredLeads(
     baseFilteredLeads,
     categories,
     statuses,
     activeTab,
     activeStatus,
-    nameFilter
+    nameFilter,
+    phoneFilter
   );
 
   // Close dropdown on Escape key
@@ -351,6 +353,9 @@ function App() {
             statusCounts={statusCounts}
             activeStatus={activeStatus}
             setActiveStatus={setActiveStatus}
+            phoneFilter={phoneFilter}
+            setPhoneFilter={setPhoneFilter}
+            phoneCounts={phoneCounts}
             isSearching={isSearching}
           />
 

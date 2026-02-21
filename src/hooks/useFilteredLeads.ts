@@ -1,6 +1,15 @@
 import { useMemo } from 'react';
 import type { Lead, Category, Status } from '../types';
 
+export type PhoneFilter = 'all' | 'mobile' | 'landline' | 'no_phone';
+
+const isMobileNumber = (phone?: string): boolean => {
+  if (!phone) return false;
+  const digits = phone.replace(/\D/g, '').replace(/^55/, '');
+  if (digits.length < 3) return false;
+  return ['6', '7', '8', '9'].includes(digits.charAt(2));
+};
+
 /**
  * Verifica se um lead pertence a uma categoria específica
  * @param lead - Lead a verificar
@@ -44,6 +53,7 @@ const leadMatchesCategory = (lead: Lead, categoryId: string, categories: Categor
  * @param activeTab - Categoria ativa (ou 'all' para todas)
  * @param activeStatus - Status ativo (ou 'all' para todos)
  * @param nameFilter - Texto para filtrar leads pelo nome
+ * @param phoneFilter - Filtro por tipo de telefone
  * @returns Objeto com leads filtrados e contadores
  */
 export const useFilteredLeads = (
@@ -52,7 +62,8 @@ export const useFilteredLeads = (
   statuses: Status[],
   activeTab: string,
   activeStatus: string | null,
-  nameFilter: string = ''
+  nameFilter: string = '',
+  phoneFilter: PhoneFilter = 'all'
 ) => {
   /**
    * Filtra leads pela categoria ativa
@@ -76,16 +87,28 @@ export const useFilteredLeads = (
   }, [leadsByCategory, nameFilter]);
 
   /**
-   * Filtra leads pela categoria E status ativos
+   * Filtra leads pelo status ativo
    */
-  const finalFilteredLeads = useMemo(() => {
-    const filtered = (!activeStatus || activeStatus === 'all')
+  const leadsByStatus = useMemo(() => {
+    return (!activeStatus || activeStatus === 'all')
       ? leadsByName
       : leadsByName.filter(lead => lead.status === activeStatus);
-
-    // Ordenar por ordem alfabética (case-insensitive e com suporte a acentos)
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   }, [leadsByName, activeStatus]);
+
+  /**
+   * Filtra leads pelo tipo de telefone e ordena alfabeticamente
+   */
+  const finalFilteredLeads = useMemo(() => {
+    let filtered = leadsByStatus;
+    if (phoneFilter === 'mobile') {
+      filtered = filtered.filter(l => isMobileNumber(l.phone));
+    } else if (phoneFilter === 'landline') {
+      filtered = filtered.filter(l => !!l.phone && !isMobileNumber(l.phone));
+    } else if (phoneFilter === 'no_phone') {
+      filtered = filtered.filter(l => !l.phone);
+    }
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  }, [leadsByStatus, phoneFilter]);
 
   /**
    * Conta leads por categoria (para tabs)
@@ -124,6 +147,16 @@ export const useFilteredLeads = (
   }, [leadsByName, statuses]);
 
   /**
+   * Conta leads por tipo de telefone (para botões de filtro)
+   * Conta dentro do filtro de categoria + nome + status ativos
+   */
+  const phoneCounts = useMemo(() => ({
+    mobile:   leadsByStatus.filter(l => isMobileNumber(l.phone)).length,
+    landline: leadsByStatus.filter(l => !!l.phone && !isMobileNumber(l.phone)).length,
+    no_phone: leadsByStatus.filter(l => !l.phone).length,
+  }), [leadsByStatus]);
+
+  /**
    * Conta total de leads na categoria ativa (todos os status)
    */
   const activeCategoryTotal = useMemo(() => {
@@ -152,6 +185,12 @@ export const useFilteredLeads = (
      * Total de leads na categoria ativa (independente do status selecionado)
      */
     activeCategoryTotal,
+
+    /**
+     * Contagens por tipo de telefone (mobile, landline, no_phone)
+     * Refletem o filtro de categoria + nome + status ativos
+     */
+    phoneCounts,
 
     /**
      * Função auxiliar para verificar se um lead pertence a uma categoria

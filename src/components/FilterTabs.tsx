@@ -1,5 +1,6 @@
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, Phone, PhoneOff, PhoneMissed } from 'lucide-react';
 import type { Category, Status, Lead } from '../types';
+import type { PhoneFilter } from '../hooks/useFilteredLeads';
 import { ExportButton } from './ExportButton';
 import useStore from '../store/useStore';
 
@@ -14,6 +15,9 @@ interface FilterTabsProps {
     statusCounts: Map<string, number>;
     activeStatus: string | null;
     setActiveStatus: (status: string | null) => void;
+    phoneFilter: PhoneFilter;
+    setPhoneFilter: (filter: PhoneFilter) => void;
+    phoneCounts: { mobile: number; landline: number; no_phone: number };
     isSearching: boolean;
 }
 
@@ -28,6 +32,9 @@ export function FilterTabs({
     statusCounts,
     activeStatus,
     setActiveStatus,
+    phoneFilter,
+    setPhoneFilter,
+    phoneCounts,
     isSearching
 }: FilterTabsProps) {
     const { leadsViewMode, setLeadsViewMode } = useStore();
@@ -109,7 +116,7 @@ export function FilterTabs({
                 </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-3">
                 <button
                     onClick={() => setActiveStatus('all')}
                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${activeStatus === 'all'
@@ -143,6 +150,52 @@ export function FilterTabs({
                         </button>
                     );
                 })}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6">
+                <button
+                    onClick={() => setPhoneFilter('all')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${phoneFilter === 'all'
+                        ? 'bg-foreground text-background border-foreground shadow-sm'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-muted-foreground hover:text-foreground'
+                        }`}
+                    aria-label="Todos os telefones"
+                >
+                    Todos Tel.
+                </button>
+                <button
+                    onClick={() => setPhoneFilter('mobile')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${phoneFilter === 'mobile'
+                        ? 'bg-green-600 text-white border-green-600 shadow-sm'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-green-500 hover:text-green-600'
+                        }`}
+                    aria-label="Filtrar leads com celular/WhatsApp"
+                >
+                    <Phone size={12} />
+                    Celular / WhatsApp ({phoneCounts.mobile})
+                </button>
+                <button
+                    onClick={() => setPhoneFilter('landline')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${phoneFilter === 'landline'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-blue-500 hover:text-blue-600'
+                        }`}
+                    aria-label="Filtrar leads com telefone fixo"
+                >
+                    <PhoneOff size={12} />
+                    Fixo ({phoneCounts.landline})
+                </button>
+                <button
+                    onClick={() => setPhoneFilter('no_phone')}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${phoneFilter === 'no_phone'
+                        ? 'bg-destructive text-destructive-foreground border-destructive shadow-sm'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-destructive hover:text-destructive'
+                        }`}
+                    aria-label="Filtrar leads sem número de telefone"
+                >
+                    <PhoneMissed size={12} />
+                    Sem Número ({phoneCounts.no_phone})
+                </button>
             </div>
         </>
     );
