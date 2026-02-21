@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check, MapPinOff } from 'lucide-react';
 import useStore from '../store/useStore';
 import { EmptyState } from './EmptyState';
+import { ThemedSelect } from './ThemedSelect';
 
 /**
  * Componente para seleção de localização (Estado, Cidade, Bairros)
@@ -20,22 +21,14 @@ const LocationSelector = () => {
     getNeighborhoodsByLocation
   } = useStore();
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isNeighborhoodDropdownOpen, setIsNeighborhoodDropdownOpen] = useState(false);
+  const neighborhoodDropdownRef = useRef<HTMLDivElement>(null);
 
   const states = getStates();
   const cities = selectedState ? getCitiesByState(selectedState) : [];
   const neighborhoods = (selectedState && selectedCity)
     ? getNeighborhoodsByLocation(selectedCity, selectedState)
     : [];
-
-  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedState(e.target.value || null);
-  };
-
-  const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCity(e.target.value || null);
-  };
 
   const toggleNeighborhood = (neighborhood: string) => {
     const isSelected = selectedNeighborhoods.includes(neighborhood);
@@ -54,15 +47,27 @@ const LocationSelector = () => {
     setSelectedNeighborhoods([]);
   };
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
+      const target = e.target as Node;
+      if (neighborhoodDropdownRef.current && !neighborhoodDropdownRef.current.contains(target)) {
+        setIsNeighborhoodDropdownOpen(false);
       }
     };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsNeighborhoodDropdownOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   const getDropdownLabel = () => {
@@ -78,79 +83,27 @@ const LocationSelector = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* State Selector */}
-      <div className="space-y-2">
-        <label
-          htmlFor="state-selector"
-          className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
-        >
-          Estado (UF)
-        </label>
-        <div className="relative group">
-          <select
-            id="state-selector"
-            value={selectedState || ''}
-            onChange={handleStateChange}
-            disabled={states.length === 0}
-            className="w-full bg-secondary/30 hover:bg-secondary/50 text-foreground border border-border/50 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 appearance-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-            aria-label="Selecione o Estado"
-          >
-            <option value="">
-              {states.length === 0 ? 'Nenhum estado cadastrado' : 'Selecione o estado...'}
-            </option>
-            {states.map((state, index) => (
-              <option key={`state-${index}`} value={state}>
-                {state}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={18}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none group-hover:text-primary transition-colors"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
+      <ThemedSelect
+        label="Estado (UF)"
+        options={states.map(s => ({ id: s, label: s }))}
+        value={selectedState || ''}
+        onChange={setSelectedState}
+        disabled={states.length === 0}
+        placeholder={states.length === 0 ? 'Nenhum estado cadastrado' : 'Selecione o estado...'}
+      />
 
       {/* City Selector */}
-      <div className="space-y-2">
-        <label
-          htmlFor="city-selector"
-          className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
-        >
-          Cidade
-        </label>
-        <div className="relative group">
-          <select
-            id="city-selector"
-            value={selectedCity || ''}
-            onChange={handleCityChange}
-            disabled={!selectedState || cities.length === 0}
-            className="w-full bg-secondary/30 hover:bg-secondary/50 text-foreground border border-border/50 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 appearance-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-            aria-label="Selecione a Cidade"
-          >
-            <option value="">
-              {!selectedState
-                ? 'Selecione um estado primeiro'
-                : cities.length === 0
-                  ? 'Nenhuma cidade cadastrada'
-                  : 'Selecione a cidade...'}
-            </option>
-            {cities.map((city, index) => (
-              <option key={`city-${index}`} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={18}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none group-hover:text-primary transition-colors"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
+      <ThemedSelect
+        label="Cidade"
+        options={cities.map(c => ({ id: c, label: c }))}
+        value={selectedCity || ''}
+        onChange={setSelectedCity}
+        disabled={!selectedState || cities.length === 0}
+        placeholder={!selectedState ? 'Selecione um estado primeiro' : cities.length === 0 ? 'Nenhuma cidade cadastrada' : 'Selecione a cidade...'}
+      />
 
       {/* Neighborhood Multi-Select */}
-      <div className="md:col-span-2 space-y-2" ref={dropdownRef}>
+      <div className="md:col-span-2 space-y-2" ref={neighborhoodDropdownRef}>
         <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1">
           Bairros (Opcional)
         </label>
@@ -174,7 +127,7 @@ const LocationSelector = () => {
                 type="button"
                 onClick={() => {
                   if (selectedCity && neighborhoods.length > 0) {
-                    setIsDropdownOpen(!isDropdownOpen);
+                    setIsNeighborhoodDropdownOpen(!isNeighborhoodDropdownOpen);
                   }
                 }}
                 disabled={!selectedCity || neighborhoods.length === 0}
@@ -187,48 +140,52 @@ const LocationSelector = () => {
               </button>
               <ChevronDown
                 size={18}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none transition-all duration-300 ${isDropdownOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none transition-all duration-300 ${isNeighborhoodDropdownOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`}
                 aria-hidden="true"
               />
 
               {/* Dropdown */}
-              {isDropdownOpen && neighborhoods.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full bg-card border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+              {isNeighborhoodDropdownOpen && neighborhoods.length > 0 && (
+                <div className="absolute z-[60] mt-1 w-full bg-card border border-border rounded-xl shadow-2xl overflow-hidden min-w-[200px]">
                   {/* Select all / Clear */}
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                  <div className="flex items-center justify-between px-4 py-2 bg-secondary/20 border-b border-border">
                     <button
                       type="button"
                       onClick={selectAll}
-                      className="text-xs text-primary hover:underline"
+                      className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                     >
                       Selecionar todos
                     </button>
                     <button
                       type="button"
                       onClick={clearSelection}
-                      className="text-xs text-muted-foreground hover:underline"
+                      className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Limpar
                     </button>
                   </div>
 
                   {/* Options */}
-                  {neighborhoods.map((neighborhood) => {
-                    const isSelected = selectedNeighborhoods.includes(neighborhood);
-                    return (
-                      <button
-                        key={neighborhood}
-                        type="button"
-                        onClick={() => toggleNeighborhood(neighborhood)}
-                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-foreground hover:bg-secondary/50 transition-colors text-left"
-                      >
-                        <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${isSelected ? 'bg-primary border-primary' : 'border-input'}`}>
-                          {isSelected && <Check size={10} className="text-primary-foreground" />}
-                        </div>
-                        {neighborhood}
-                      </button>
-                    );
-                  })}
+                  <div className="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                    {neighborhoods.map((neighborhood) => {
+                      const isSelected = selectedNeighborhoods.includes(neighborhood);
+                      return (
+                        <button
+                          key={neighborhood}
+                          type="button"
+                          onClick={() => toggleNeighborhood(neighborhood)}
+                          className="w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground hover:bg-secondary/50 rounded-lg transition-all text-left"
+                        >
+                          <div className={`w-4 h-4 rounded-md border flex-shrink-0 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary scale-110' : 'border-border bg-secondary/30'}`}>
+                            {isSelected && <Check size={10} className="text-primary-foreground stroke-[3]" />}
+                          </div>
+                          <span className={isSelected ? 'font-medium text-primary' : ''}>
+                            {neighborhood}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

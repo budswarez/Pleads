@@ -6,6 +6,7 @@ import { useEscapeKey } from '../hooks/useEscapeKey';
 import { fetchNeighborhoods } from '../services/placesService';
 import { fetchStates, fetchCities, type State, type City } from '../services/brasilApiService';
 import { EmptyState } from './EmptyState';
+import { ThemedSelect } from './ThemedSelect';
 
 interface LocationManagementModalProps {
   isOpen: boolean;
@@ -188,23 +189,17 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
               >
                 Estado (UF)
               </label>
-              <select
-                id="state-select"
-                className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              <ThemedSelect
+                options={availableStates.map(s => ({ id: s.sigla, label: `${s.nome} (${s.sigla})` }))}
                 value={state}
-                onChange={(e) => {
-                  setState(e.target.value);
-                  setCity(''); // Clear city when state changes
+                onChange={(val) => {
+                  setState(val);
+                  setCity('');
                 }}
                 disabled={isLoadingStates}
-              >
-                <option value="">Selecione...</option>
-                {availableStates.map((s) => (
-                  <option key={s.sigla} value={s.sigla}>
-                    {s.nome} ({s.sigla})
-                  </option>
-                ))}
-              </select>
+                placeholder="Selecione..."
+                buttonClassName="!bg-input !border-input"
+              />
             </div>
 
             <div>
@@ -220,20 +215,14 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
                   Carregando cidades...
                 </div>
               ) : (
-                <select
-                  id="city-select"
-                  className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                <ThemedSelect
+                  options={availableCities.map(c => ({ id: c.nome, label: c.nome }))}
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(val) => setCity(val)}
                   disabled={!state || availableCities.length === 0}
-                >
-                  <option value="">{state ? 'Selecione a cidade...' : 'Selecione o estado primeiro'}</option>
-                  {availableCities.map((c) => (
-                    <option key={c.codigo_ibge} value={c.nome}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={state ? 'Selecione a cidade...' : 'Selecione o estado primeiro'}
+                  buttonClassName="!bg-input !border-input"
+                />
               )}
             </div>
 

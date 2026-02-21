@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Phone, Globe, MessageCircle, ExternalLink, Star, StarHalf, FileText, Trash2 } from 'lucide-react';
 import LeadNotesModal from './LeadNotesModal';
+import { ThemedSelect } from './ThemedSelect';
 import type { Lead, Status, Category } from '../types';
 
 interface LeadCardProps {
@@ -228,15 +229,13 @@ const LeadCard = React.memo(({
         {viewMode === 'list' && (
           <div className="flex items-center gap-2 bg-secondary/30 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none w-full md:w-auto justify-between md:justify-start mt-2 md:mt-0">
             <div className="flex items-center gap-2">
-              <select
-                className="text-[10px] bg-secondary border border-border rounded px-2 py-1 focus:outline-none"
+              <ThemedSelect
+                options={statuses.map(s => ({ id: s.id, label: s.label, color: s.color }))}
                 value={lead.status || 'NEW'}
-                onChange={(e) => onStatusUpdate(lead.place_id, e.target.value)}
-              >
-                {statuses.map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
+                onChange={(val) => onStatusUpdate(lead.place_id, val)}
+                buttonClassName="!rounded !py-1 !px-2 !bg-secondary !h-7 min-w-[100px]"
+                className="w-fit"
+              />
               <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.name)}&query_place_id=${lead.place_id}`}
                 target="_blank"
@@ -260,15 +259,13 @@ const LeadCard = React.memo(({
       {viewMode === 'grid' && (
         <div className="mt-auto pt-4 border-t border-border">
           <div className="flex items-center justify-between gap-2">
-            <select
-              className="text-[10px] bg-secondary border border-border rounded px-2 py-1 focus:outline-none"
+            <ThemedSelect
+              options={statuses.map(s => ({ id: s.id, label: s.label, color: s.color }))}
               value={lead.status || 'NEW'}
-              onChange={(e) => onStatusUpdate(lead.place_id, e.target.value)}
-            >
-              {statuses.map(s => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </select>
+              onChange={(val) => onStatusUpdate(lead.place_id, val)}
+              buttonClassName="!rounded !py-1 !px-2 !bg-secondary !h-7 min-w-[120px]"
+              className="w-fit"
+            />
 
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.name)}&query_place_id=${lead.place_id}`}

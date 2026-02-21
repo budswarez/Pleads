@@ -65,7 +65,7 @@ export function SearchControls({
                     </button>
 
                     {isSearchDropdownOpen && (
-                        <div className="absolute top-full mt-2 left-0 w-full md:w-auto bg-card border border-border rounded-md shadow-lg py-1 z-10 min-w-[200px]">
+                        <div className="absolute top-full mt-2 left-0 w-full md:w-auto bg-card border border-border rounded-md shadow-lg py-1 z-50 min-w-[200px]">
                             <button
                                 onClick={() => {
                                     handleSearchNewPlaces(null);
