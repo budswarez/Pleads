@@ -351,4 +351,4 @@ Se você está documentando um incidente real com credenciais específicas, cons
 
 ---
 
-**Última atualização**: 2026-02-19 (Revisão periódica de segurança e auditoria de funcionalidades)
+**Última atualização**: 2026-02-21 (Auditoria de persistência e segurança de configurações)

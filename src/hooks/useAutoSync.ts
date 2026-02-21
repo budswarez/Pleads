@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import useStore from '../store/useStore';
-import { fetchLeads, fetchLocations, fetchCategories, fetchStatuses } from '../services/supabaseService';
+import {
+    fetchLeads, fetchLocations,
+    fetchCategories,
+    fetchStatuses,
+    fetchSettings
+} from '../services/supabaseService';
 
 /**
  * Hook to automatically synchronize local Zustand state with Supabase
@@ -22,18 +27,20 @@ export function useAutoSync(
                 try {
                     // Download from Supabase as source of truth
                     // Passing city/state filters to fetchLeads to ensure we get relevant data efficiently
-                    const [leadsRes, locationsRes, categoriesRes, statusesRes] = await Promise.all([
+                    const [leadsRes, locationsRes, categoriesRes, statusesRes, settingsRes] = await Promise.all([
                         fetchLeads(selectedCity, selectedState),
                         fetchLocations(),
                         fetchCategories(),
-                        fetchStatuses()
+                        fetchStatuses(),
+                        fetchSettings()
                     ]);
 
                     loadFromSupabase({
                         leads: leadsRes.data || undefined,
                         locations: locationsRes.data?.map(l => ({ ...l, id: l.id })) || undefined,
                         categories: categoriesRes.data || undefined,
-                        statuses: statusesRes.data || undefined
+                        statuses: statusesRes.data || undefined,
+                        settings: settingsRes.data || undefined
                     });
                 } catch (err) {
                     console.error('Auto-sync failed:', err);

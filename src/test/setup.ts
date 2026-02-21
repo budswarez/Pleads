@@ -30,6 +30,11 @@ Object.defineProperty(window, 'matchMedia', {
 // Mock window.open
 global.open = vi.fn();
 
+// Mock canvas-confetti
+vi.mock('canvas-confetti', () => ({
+  default: vi.fn(),
+}));
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};

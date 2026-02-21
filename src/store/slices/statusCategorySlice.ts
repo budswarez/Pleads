@@ -1,74 +1,74 @@
 import { StateCreator } from 'zustand';
-import type { StoreState, StatusCategorySlice, Status } from '../../types';
-import { DEFAULT_STATUSES, DEFAULT_CATEGORIES } from '../../constants';
-import { getSupabase, upsertStatus, upsertCategory } from '../../services/supabaseService';
+import { StoreState, StatusCategorySlice } from '../../types';
+import { upsertStatus, deleteStatus, upsertCategory, deleteCategory } from '../../services/supabaseService';
 
-export const createStatusCategorySlice: StateCreator<
-    StoreState,
-    [],
-    [],
-    StatusCategorySlice
-> = (set, get) => ({
-    statuses: [...DEFAULT_STATUSES],
-    categories: [...DEFAULT_CATEGORIES],
+export const createStatusCategorySlice: StateCreator<StoreState, [], [], StatusCategorySlice> = (set, get) => ({
+  statuses: [],
+  categories: [],
 
-    addStatus: (label: string, color: string) => {
-        const id = label.toUpperCase().replace(/\s+/g, '_') + '_' + Date.now();
-        set(prevState => ({
-            statuses: [...prevState.statuses, { id, label, color }]
-        }));
+  addStatus: async (label, color) => {
+    const { supabaseConnected } = get();
+    const id = label.toUpperCase().replace(/\s+/g, '_');
 
-        // Auto-sync to Supabase if connected
-        const { supabaseConnected } = get();
-        if (supabaseConnected && getSupabase()) {
-            upsertStatus(id, label, color).catch(err =>
-                console.error('[Auto-sync] Failed to sync status:', err)
-            );
-        }
-    },
+    if (supabaseConnected) {
+      await upsertStatus(id, label, color);
+    }
 
-    removeStatus: (id: string) => {
-        set(prevState => ({
-            statuses: prevState.statuses.filter(s => s.id !== id)
-        }));
-    },
+    set(state => ({
+      statuses: [...state.statuses, { id, label, color }]
+    }));
+  },
 
-    updateStatus: (id: string, updates: Partial<Status>) => {
-        set(prevState => ({
-            statuses: prevState.statuses.map(s =>
-                s.id === id ? { ...s, ...updates } : s
-            )
-        }));
+  removeStatus: async (id) => {
+    const { supabaseConnected } = get();
 
-        const { supabaseConnected, statuses } = get();
-        if (supabaseConnected && getSupabase()) {
-            const updatedStatus = statuses.find(s => s.id === id);
-            if (updatedStatus) {
-                upsertStatus(updatedStatus.id, updatedStatus.label, updatedStatus.color).catch(err =>
-                    console.error('[Auto-sync] Failed to sync status update:', err)
-                );
-            }
-        }
-    },
+    if (supabaseConnected) {
+      await deleteStatus(id);
+    }
 
-    addCategory: (label: string, query: string) => {
-        const id = label.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
-        set(prevState => ({
-            categories: [...prevState.categories, { id, label, query }]
-        }));
+    set(state => ({
+      statuses: state.statuses.filter(s => s.id !== id)
+    }));
+  },
 
-        // Auto-sync to Supabase if connected
-        const { supabaseConnected } = get();
-        if (supabaseConnected && getSupabase()) {
-            upsertCategory(id, label, query).catch(err =>
-                console.error('[Auto-sync] Failed to sync category:', err)
-            );
-        }
-    },
+  updateStatus: async (id, updates) => {
+    const { statuses, supabaseConnected } = get();
+    const status = statuses.find(s => s.id === id);
+    if (!status) return;
 
-    removeCategory: (id: string) => {
-        set(prevState => ({
-            categories: prevState.categories.filter(c => c.id !== id)
-        }));
-    },
+    const updatedStatus = { ...status, ...updates };
+
+    if (supabaseConnected) {
+      await upsertStatus(id, updatedStatus.label, updatedStatus.color);
+    }
+
+    set(state => ({
+      statuses: state.statuses.map(s => s.id === id ? updatedStatus : s)
+    }));
+  },
+
+  addCategory: async (label, query) => {
+    const { supabaseConnected } = get();
+    const id = label.toLowerCase().replace(/\s+/g, '_');
+
+    if (supabaseConnected) {
+      await upsertCategory(id, label, query);
+    }
+
+    set(state => ({
+      categories: [...state.categories, { id, label, query }]
+    }));
+  },
+
+  removeCategory: async (id) => {
+    const { supabaseConnected } = get();
+
+    if (supabaseConnected) {
+      await deleteCategory(id);
+    }
+
+    set(state => ({
+      categories: state.categories.filter(c => c.id !== id)
+    }));
+  }
 });

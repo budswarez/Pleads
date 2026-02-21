@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Palette, X, Plus, Trash2 } from 'lucide-react';
 import type { StatusManagementModalProps } from '../types';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { EmptyState } from './EmptyState';
 
 /**
  * Modal for managing lead statuses
@@ -22,10 +23,10 @@ const StatusManagementModal = ({
 
   if (!isOpen) return null;
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newLabel.trim()) {
-      addStatus(newLabel.trim(), newColor);
+      await addStatus(newLabel.trim(), newColor);
       setNewLabel('');
     }
   };
@@ -96,30 +97,42 @@ const StatusManagementModal = ({
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">
               Status Atuais
             </label>
-            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {statuses.map((status) => (
-                <div
-                  key={status.id}
-                  className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-border group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-3 h-3 rounded-full shadow-sm"
-                      style={{ backgroundColor: status.color }}
-                      aria-label={`Cor: ${status.color}`}
-                    />
-                    <span className="text-sm font-medium text-foreground">{status.label}</span>
-                  </div>
-                  <button
-                    onClick={() => removeStatus(status.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                    aria-label={`Remover status ${status.label}`}
+            {statuses.length > 0 ? (
+              <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                {statuses.map((status) => (
+                  <div
+                    key={status.id}
+                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-border group"
                   >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-3 h-3 rounded-full shadow-sm"
+                        style={{ backgroundColor: status.color }}
+                        aria-label={`Cor: ${status.color}`}
+                      />
+                      <span className="text-sm font-medium text-foreground">{status.label}</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm(`Deseja realmente remover o status "${status.label}"?`)) {
+                          await removeStatus(status.id);
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      aria-label={`Remover status ${status.label}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Palette}
+                description="Nenhum status cadastrado."
+                className="py-8 border-dashed bg-muted/20 shadow-none"
+              />
+            )}
           </div>
         </div>
 

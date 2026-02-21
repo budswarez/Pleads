@@ -32,27 +32,40 @@ export function FilterTabs({
             <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border">
                 <button
                     onClick={() => setActiveTab('all')}
-                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === 'all'
+                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'all'
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                         }`}
                     aria-label="Todas as categorias"
                 >
-                    Todas ({baseFilteredLeads.length})
+                    Todas
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${activeTab === 'all'
+                        ? 'bg-primary-foreground text-primary'
+                        : 'bg-secondary text-secondary-foreground'
+                        }`}>
+                        {baseFilteredLeads.length}
+                    </span>
                 </button>
                 {categories.map(cat => {
                     const count = categoryCounts.get(cat.id) || 0;
+                    const isActive = activeTab === cat.id;
                     return (
                         <button
                             key={cat.id}
                             onClick={() => setActiveTab(cat.id)}
-                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab === cat.id
+                            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${isActive
                                 ? 'bg-primary text-primary-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                                 }`}
                             aria-label={`Filtrar por ${cat.label}`}
                         >
-                            {cat.label} ({count})
+                            {cat.label}
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5 transition-colors duration-300 ${isActive
+                                ? 'bg-primary-foreground text-primary'
+                                : 'bg-secondary text-secondary-foreground'
+                                }`}>
+                                {count}
+                            </span>
                         </button>
                     );
                 })}

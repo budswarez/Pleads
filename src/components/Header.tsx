@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Loader2, Palette, MapPin, Users, Settings, LogOut, Menu, X } from 'lucide-react';
+import { Loader2, Palette, MapPin, Users, Settings, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 
 interface HeaderProps {
     appTitle: string;
@@ -29,6 +30,7 @@ export function Header({
     openUserModal
 }: HeaderProps) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { theme, toggleTheme } = useTheme();
 
     return (
         <header className="mb-4 md:mb-8 max-w-7xl mx-auto border-b md:border-none pb-4 md:pb-0">
@@ -91,6 +93,14 @@ export function Header({
                         <Settings size={16} />
                     </button>
 
+                    <button
+                        onClick={toggleTheme}
+                        className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors"
+                        aria-label="Alternar tema"
+                    >
+                        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                    </button>
+
                     {/* User info & Logout */}
                     <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
                         <span className="text-xs text-muted-foreground hidden lg:block">
@@ -122,6 +132,14 @@ export function Header({
             {/* Mobile Navigation Menu */}
             {isMobileMenuOpen && (
                 <div className="md:hidden mt-4 space-y-2 border-t pt-4 animate-in slide-in-from-top-2">
+                    <div className="flex justify-end px-2 mb-2">
+                        <button
+                            onClick={toggleTheme}
+                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-secondary/50 transition-colors"
+                        >
+                            {theme === 'dark' ? <><Sun size={16} /> Modo Claro</> : <><Moon size={16} /> Modo Escuro</>}
+                        </button>
+                    </div>
                     <div className="flex items-center justify-between px-2 mb-4">
                         <span className="text-sm font-medium text-muted-foreground">
                             {username}

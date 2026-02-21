@@ -1,24 +1,16 @@
 import { useEffect } from 'react';
 
-/**
- * Hook to handle Escape key press
- * @param callback Function to call when Escape is pressed
- * @param isActive Whether the hook is active (e.g., modal is open)
- */
-export const useEscapeKey = (callback: () => void, isActive: boolean = true) => {
+export function useEscapeKey(callback: () => void, condition: boolean = true) {
   useEffect(() => {
-    if (!isActive) return;
+    if (!condition) return;
 
-    const handleEscape = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         callback();
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [callback, isActive]);
-};
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [callback, condition]);
+}

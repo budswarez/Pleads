@@ -1,5 +1,6 @@
-import { Search, ChevronDown, Square } from 'lucide-react';
+import { Search, ChevronDown, Square, Filter, FilterX, Loader2 } from 'lucide-react';
 import type { Category, Lead } from '../types';
+import { ExportButton } from './ExportButton';
 
 interface SearchControlsProps {
     hasLocationSelected: boolean;
@@ -13,6 +14,9 @@ interface SearchControlsProps {
     handleClearLeads: () => void;
     activeTab: string;
     searchStatus: string;
+    nameFilter: string;
+    setNameFilter: (name: string) => void;
+    setActiveTab: (tab: string) => void;
 }
 
 export function SearchControls({
@@ -26,9 +30,14 @@ export function SearchControls({
     baseFilteredLeads,
     handleClearLeads,
     activeTab,
-    searchStatus
+    searchStatus,
+    nameFilter,
+    setNameFilter,
+    setActiveTab
 }: SearchControlsProps) {
     if (!hasLocationSelected && !isSearching) return null;
+
+    const activeFiltersCount = (nameFilter ? 1 : 0) + (activeTab !== 'all' ? 1 : 0);
 
     return (
         <>
@@ -38,13 +47,22 @@ export function SearchControls({
                         onClick={() => setIsSearchDropdownOpen(!isSearchDropdownOpen)}
                         disabled={isSearching}
                         className="w-full md:w-auto bg-primary text-primary-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        aria-label="Buscar leads"
+                        aria-label={isSearching ? "Buscando leads" : "Buscar leads"}
                         aria-expanded={isSearchDropdownOpen}
                         aria-haspopup="true"
                     >
-                        <Search size={16} />
-                        Buscar Leads
-                        <ChevronDown size={14} />
+                        {isSearching ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                Buscando...
+                            </>
+                        ) : (
+                            <>
+                                <Search size={16} />
+                                Buscar Leads
+                                <ChevronDown size={14} />
+                            </>
+                        )}
                     </button>
 
                     {isSearchDropdownOpen && (
@@ -82,11 +100,46 @@ export function SearchControls({
                         onClick={stopSearch}
                         className="w-full md:w-auto bg-destructive text-destructive-foreground px-6 py-2 rounded-md font-medium hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
                         aria-label="Parar busca"
+                        title="Os resultados já encontrados serão preservados"
                     >
                         <Square size={16} />
                         Parar Busca
                     </button>
                 )}
+
+                {/* Filtro de Texto */}
+                <div className="relative flex-grow md:flex-grow-0 md:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Filter size={14} className="text-muted-foreground" />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Filtrar resultados por nome..."
+                        value={nameFilter}
+                        onChange={(e) => setNameFilter(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-input text-foreground border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
+                        aria-label="Filtrar leads por nome"
+                    />
+                </div>
+
+                {(nameFilter || activeTab !== 'all') && (
+                    <button
+                        onClick={() => {
+                            setNameFilter('');
+                            setActiveTab('all');
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary hover:text-foreground rounded-md transition-colors flex items-center justify-center gap-2"
+                        aria-label="Limpar filtros"
+                    >
+                        <FilterX size={16} />
+                        <span className="hidden sm:inline">Limpar Filtros</span>
+                        <span className="ml-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center flex items-center justify-center h-5">
+                            {activeFiltersCount}
+                        </span>
+                    </button>
+                )}
+
+                <ExportButton leads={baseFilteredLeads} disabled={isSearching} />
 
                 {baseFilteredLeads.length > 0 && !isSearching && (
                     <button

@@ -1,170 +1,133 @@
 import { StateCreator } from 'zustand';
-import toast from 'react-hot-toast';
-import type { StoreState, LeadSlice, Lead } from '../../types';
-import { getSupabase, upsertLeads, updateLeadInDb } from '../../services/supabaseService';
+import { StoreState, LeadSlice } from '../../types';
+import { deleteLeadFromDb, deleteLeadsByLocationFromDb, upsertLeads, updateLeadInDb } from '../../services/supabaseService';
 
-export const createLeadSlice: StateCreator<
-    StoreState,
-    [],
-    [],
-    LeadSlice
-> = (set, get) => ({
-    leads: [],
+export const createLeadSlice: StateCreator<StoreState, [], [], LeadSlice> = (set, get) => ({
+  leads: [],
 
-    addLeads: (newLeads: Lead[]): number => {
-        const { leads: currentLeads } = get();
-        const existingMap = new Map(currentLeads.map(l => [l.place_id, l]));
-        let addedCount = 0;
+  addLeads: async (newLeads) => {
+    const { leads, supabaseConnected } = get();
+    const existingIds = new Set(leads.map(l => l.place_id));
+    const uniqueNewLeads = newLeads.filter(l => !existingIds.has(l.place_id));
 
-        newLeads.forEach(newLead => {
-            if (existingMap.has(newLead.place_id)) {
-                const existing = existingMap.get(newLead.place_id)!;
-                existingMap.set(newLead.place_id, {
-                    ...existing,
-                    ...newLead,
-                    status: existing.status, // Preserve existing status
-                    notes: existing.notes,   // Preserve existing notes
-                    // Update categoryId if present in new search, otherwise keep existing
-                    categoryId: newLead.categoryId || existing.categoryId
-                });
-            } else {
-                existingMap.set(newLead.place_id, newLead);
-                addedCount++;
-            }
-        });
+    if (uniqueNewLeads.length > 0) {
+      if (supabaseConnected) {
+        await upsertLeads(uniqueNewLeads);
+      }
+      set({ leads: [...leads, ...uniqueNewLeads] });
+    }
+    return uniqueNewLeads.length;
+  },
 
-        const allLeads = Array.from(existingMap.values());
-        set({ leads: allLeads });
+  clearLeads: async (onlySelected = false) => {
+    if (onlySelected) {
+      const { selectedCity, selectedState, supabaseConnected } = get();
+      if (!selectedCity || !selectedState) return;
 
-        // Obter apenas os leads que acabaram de ser adicionados/atualizados
-        // (usamos o estado mesclado do existingMap para manter o status/notas atuais)
-        const upsertPayload = newLeads.map(newLead => existingMap.get(newLead.place_id)!);
+      if (supabaseConnected) {
+        await deleteLeadsByLocationFromDb(selectedCity, selectedState);
+      }
 
-        // Auto-sync to Supabase if connected
-        const { supabaseConnected } = get();
-        if (supabaseConnected && getSupabase() && upsertPayload.length > 0) {
-            upsertLeads(upsertPayload).then(({ error }) => {
-                if (error) {
-                    console.error('[Auto-sync] Failed to sync new leads:', error);
-                    toast.error(`Falha ao sincronizar leads com a nuvem: ${error.message}`);
-                }
-            }).catch(err => {
-                console.error('[Auto-sync] Exception syncing new leads:', err);
-                toast.error('Erro inesperado ao sincronizar com a nuvem.');
-            });
-        }
+      set(state => ({
+        leads: state.leads.filter(l => l.city !== selectedCity || l.state !== selectedState)
+      }));
+    } else {
+      // For clearing everything local without affecting DB or if confirmed
+      set({ leads: [] });
+    }
+  },
 
-        return addedCount;
-    },
+  removeLeadsByCategory: async (categoryId) => {
+    const { selectedCity, selectedState, supabaseConnected } = get();
+    if (!selectedCity || !selectedState) return;
 
-    clearLeads: (onlySelected: boolean = true) => {
-        const { selectedState, selectedCity, leads } = get();
+    if (supabaseConnected) {
+      await deleteLeadsByLocationFromDb(selectedCity, selectedState, categoryId);
+    }
 
-        if (onlySelected) {
-            if (!selectedState || !selectedCity) return;
+    set(state => ({
+      leads: state.leads.filter(l => {
+        // Keep if not in current location OR not in category
+        const inLocation = l.city === selectedCity && l.state === selectedState;
+        const inCategory = l.categoryId === categoryId;
+        return !(inLocation && inCategory);
+      })
+    }));
+  },
 
-            const filteredLeads = leads.filter(lead => {
-                const cityMatch = lead.city?.toLowerCase() === selectedCity.toLowerCase();
-                const stateMatch = lead.state?.toLowerCase() === selectedState.toLowerCase();
-                return !(cityMatch && stateMatch);
-            });
+  updateLeadStatus: async (placeId, status) => {
+    const { supabaseConnected } = get();
 
-            set({ leads: filteredLeads });
-        } else {
-            set({ leads: [] });
-        }
-    },
+    if (supabaseConnected) {
+      await updateLeadInDb(placeId, { status });
+    }
 
-    removeLeadsByCategory: (categoryId: string) => {
-        const { selectedState, selectedCity, leads } = get();
+    set(state => ({
+      leads: state.leads.map(l => l.place_id === placeId ? { ...l, status } : l)
+    }));
+  },
 
-        if (!selectedState || !selectedCity) return;
+  updateLeadNotes: async (placeId, noteText) => {
+    const { leads, supabaseConnected } = get();
+    const lead = leads.find(l => l.place_id === placeId);
 
-        const filteredLeads = leads.filter(lead => {
-            const cityMatch = lead.city?.toLowerCase() === selectedCity.toLowerCase();
-            const stateMatch = lead.state?.toLowerCase() === selectedState.toLowerCase();
-            const categoryMatch = lead.categoryId === categoryId;
+    if (!lead) return;
 
-            return !(cityMatch && stateMatch && categoryMatch);
-        });
+    const notes = lead.notes || [];
+    const newNote = {
+      id: Date.now(),
+      text: noteText,
+      date: new Date().toISOString()
+    };
+    const updatedNotes = [...notes, newNote];
 
-        set({ leads: filteredLeads });
-    },
+    if (supabaseConnected) {
+      await updateLeadInDb(placeId, { notes: updatedNotes });
+    }
 
-    updateLeadStatus: (placeId: string, status: string) => {
-        set(prevState => ({
-            leads: prevState.leads.map(lead =>
-                lead.place_id === placeId ? { ...lead, status } : lead
-            )
-        }));
+    set(state => ({
+      leads: state.leads.map(l => l.place_id === placeId ? { ...l, notes: updatedNotes } : l)
+    }));
+  },
 
-        const { supabaseConnected } = get();
-        if (supabaseConnected && getSupabase()) {
-            updateLeadInDb(placeId, { status }).catch((err: any) =>
-                console.error('[Auto-sync] Failed to sync lead status:', err)
-            );
-        }
-    },
+  deleteLeadNote: async (placeId, noteId) => {
+    const { leads, supabaseConnected } = get();
+    const lead = leads.find(l => l.place_id === placeId);
 
-    updateLeadNotes: (placeId: string, noteText: string) => {
-        set(prevState => ({
-            leads: prevState.leads.map(lead =>
-                lead.place_id === placeId
-                    ? {
-                        ...lead,
-                        notes: [
-                            ...(lead.notes || []),
-                            { id: Date.now(), text: noteText, date: new Date().toISOString() }
-                        ]
-                    }
-                    : lead
-            )
-        }));
+    if (lead && lead.notes) {
+      const updatedNotes = lead.notes.filter(n => n.id !== noteId);
 
-        const { supabaseConnected, leads } = get();
-        if (supabaseConnected && getSupabase()) {
-            const updatedLead = leads.find(l => l.place_id === placeId);
-            if (updatedLead) {
-                updateLeadInDb(placeId, { notes: updatedLead.notes }).catch((err: any) =>
-                    console.error('[Auto-sync] Failed to sync lead notes:', err)
-                );
-            }
-        }
-    },
+      if (supabaseConnected) {
+        await updateLeadInDb(placeId, { notes: updatedNotes });
+      }
 
-    deleteLeadNote: (placeId: string, noteId: number) => {
-        set(prevState => ({
-            leads: prevState.leads.map(lead =>
-                lead.place_id === placeId
-                    ? {
-                        ...lead,
-                        notes: (lead.notes || []).filter(note => note.id !== noteId)
-                    }
-                    : lead
-            )
-        }));
+      set(state => ({
+        leads: state.leads.map(l => {
+          if (l.place_id === placeId) {
+            return { ...l, notes: updatedNotes };
+          }
+          return l;
+        })
+      }));
+    }
+  },
 
-        const { supabaseConnected, leads } = get();
-        if (supabaseConnected && getSupabase()) {
-            const updatedLead = leads.find(l => l.place_id === placeId);
-            if (updatedLead) {
-                updateLeadInDb(placeId, { notes: updatedLead.notes }).catch((err: any) =>
-                    console.error('[Auto-sync] Failed to sync lead note deletion:', err)
-                );
-            }
-        }
-    },
+  removeLead: async (placeId) => {
+    const { supabaseConnected } = get();
 
-    getFilteredLeads: (): Lead[] => {
-        const { leads, selectedState, selectedCity } = get();
+    if (supabaseConnected) {
+      await deleteLeadFromDb(placeId);
+    }
 
-        if (!selectedState || !selectedCity) {
-            return [];
-        }
+    set(state => ({
+      leads: state.leads.filter(l => l.place_id !== placeId)
+    }));
+  },
 
-        return leads.filter(lead =>
-            lead.city?.toLowerCase() === selectedCity.toLowerCase() &&
-            lead.state?.toLowerCase() === selectedState.toLowerCase()
-        );
-    },
+  getFilteredLeads: () => {
+    const { leads, selectedCity, selectedState } = get();
+    if (!selectedCity || !selectedState) return [];
+
+    return leads.filter(l => l.city === selectedCity && l.state === selectedState);
+  }
 });

@@ -1,8 +1,8 @@
-# PLeads - Lead Capture System (v2.5.1)
+# PLeads - Lead Capture System (v2.6.0)
 
 Modern TypeScript application for capturing and managing business leads using Google Places API and Supabase.
 
-**Features**: Authentication (Admin/User) • Google Places API via Supabase Edge Functions • Auto-fetch neighborhoods • Multi-select search by neighborhood • Paginação de Cards • Auto-sync with Supabase • **Busca Resiliente (Retry & Skip)** • **Salvamento Incremental** • **Exclusão de Anotações** • **Contato via WhatsApp Inteligente** • TypeScript strict mode • Estado modularizado (Zustand Slices) • Toast notifications • Keyboard navigation
+**Features**: Authentication (Admin/User) • Google Places API via Supabase Edge Functions • Auto-fetch neighborhoods • Multi-select search by neighborhood • Paginação de Cards • Auto-sync with Supabase • **Persistência Global de Configurações** • **Busca Resiliente (Retry & Skip)** • **Salvamento Incremental** • **Exclusão de Anotações** • **Contato via WhatsApp Inteligente** • TypeScript strict mode • Estado modularizado (Zustand Slices) • Toast notifications • Keyboard navigation
 
 ## Prerequisites
 
@@ -180,6 +180,25 @@ CREATE TABLE IF NOT EXISTS statuses (
 
 ALTER TABLE statuses ENABLE ROW LEVEL SECURITY;
 
+CREATE TABLE IF NOT EXISTS settings (
+    id BIGINT PRIMARY KEY DEFAULT 1,
+    app_title TEXT,
+    app_description TEXT,
+    app_logo_url TEXT,
+    max_leads_per_category INTEGER DEFAULT 60,
+    leads_per_page INTEGER DEFAULT 60,
+    google_api_key TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT single_row CHECK (id = 1)
+);
+
+INSERT INTO settings (id, app_title, app_description, max_leads_per_category, leads_per_page)
+VALUES (1, 'PLeads', 'Sistema de Gestão de Leads', 60, 60)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
 -- =============================================
 -- 2. TABELA DE PERFIS DE USUÁRIO (AUTENTICAÇÃO)
 -- =============================================
@@ -241,6 +260,9 @@ CREATE POLICY "Allow authenticated access" ON categories
   FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow authenticated access" ON statuses
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated access" ON settings
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- user_profiles: sem recursão (usa funções SECURITY DEFINER)

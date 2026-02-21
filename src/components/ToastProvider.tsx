@@ -1,29 +1,32 @@
 import { Toaster } from 'react-hot-toast';
+import { useTheme } from '../hooks/useTheme';
 
-export const ToastProvider = () => (
-  <Toaster
-    position="top-right"
-    toastOptions={{
-      duration: 3000,
-      style: {
-        background: '#1f2937',
-        color: '#f9fafb',
-        border: '1px solid #374151',
-      },
-      success: {
+export const ToastProvider = () => {
+  const { theme } = useTheme();
+
+  return (
+    <Toaster
+      position="bottom-right"
+      toastOptions={{
         duration: 3000,
-        iconTheme: {
-          primary: '#22c55e',
-          secondary: '#fff',
+        style: {
+          background: theme === 'dark' ? '#1f2937' : '#ffffff',
+          color: theme === 'dark' ? '#f9fafb' : '#1f2937',
+          border: '1px solid var(--border)',
         },
-      },
-      error: {
-        duration: 4000,
-        iconTheme: {
-          primary: '#ef4444',
-          secondary: '#fff',
+        success: {
+          iconTheme: {
+            primary: '#22c55e',
+            secondary: '#fff',
+          },
         },
-      },
-    }}
-  />
-);
+        error: {
+          iconTheme: {
+            primary: '#ef4444',
+            secondary: '#fff',
+          },
+        },
+      }}
+    />
+  );
+};

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Search, MapPin, Loader2, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
+import confetti from 'canvas-confetti';
 import { usePagination } from './hooks/usePagination';
 import LocationSelector from './components/LocationSelector';
 import LocationManagementModal from './components/LocationManagementModal';
@@ -13,6 +14,7 @@ import LoginPage from './components/LoginPage';
 import SetupPage from './components/SetupPage';
 import { ToastProvider } from './components/ToastProvider';
 import useStore from './store/useStore';
+import { initSupabase } from './services/supabaseService';
 import { useSearch } from './hooks/useSearch';
 import { useFilteredLeads } from './hooks/useFilteredLeads';
 import { useEscapeKey } from './hooks/useEscapeKey';
@@ -21,7 +23,10 @@ import { useAutoSync } from './hooks/useAutoSync';
 import { Header } from './components/Header';
 import { SearchControls } from './components/SearchControls';
 import { FilterTabs } from './components/FilterTabs';
+import { useModals } from './hooks/useModals';
+import { ProgressBar } from './components/ProgressBar';
 import type { Lead, Status, Category } from './types';
+import { EmptyState } from './components/EmptyState';
 
 /**
  * Subcomponent: Paginated grid of LeadCards with navigation controls
@@ -34,6 +39,7 @@ function PaginatedLeadsGrid({
   onStatusUpdate,
   onNotesUpdate,
   onNoteDelete,
+  onRemoveLead,
 }: {
   filteredLeads: Lead[];
   leadsPerPage: number;
@@ -42,6 +48,7 @@ function PaginatedLeadsGrid({
   onStatusUpdate: (placeId: string, status: string) => void;
   onNotesUpdate: (placeId: string, notes: string) => void;
   onNoteDelete: (placeId: string, noteId: number) => void;
+  onRemoveLead: (placeId: string) => void;
 }) {
   const {
     paginatedItems,
@@ -64,6 +71,7 @@ function PaginatedLeadsGrid({
             onStatusUpdate={onStatusUpdate}
             onNotesUpdate={onNotesUpdate}
             onNoteDelete={onNoteDelete}
+            onRemoveLead={onRemoveLead}
           />
         ))}
       </div>
@@ -111,6 +119,20 @@ function PaginatedLeadsGrid({
  * Manages lead generation and tracking using Google Places API
  */
 function App() {
+  // Initialize Supabase from env vars on mount if not already initialized
+  useState(() => {
+    const envUrl = import.meta.env.VITE_SUPABASE_URL;
+    const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { supabaseUrl, supabaseAnonKey } = useStore.getState();
+
+    const url = supabaseUrl || envUrl;
+    const key = supabaseAnonKey || envKey;
+
+    if (url && key) {
+      initSupabase(url, key);
+    }
+  });
+
   // Auth
   const {
     user,
@@ -125,16 +147,21 @@ function App() {
     refreshProfile
   } = useAuth();
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  // Modal management hook
+  const {
+    isLocationModalOpen, openLocationModal, closeLocationModal,
+    isStatusModalOpen, openStatusModal, closeStatusModal,
+    isCategoryModalOpen, openCategoryModal, closeCategoryModal,
+    isSettingsModalOpen, openSettingsModal, closeSettingsModal,
+    isUserModalOpen, openUserModal, closeUserModal
+  } = useModals();
+
   // UI states
   const [activeTab, setActiveTab] = useState('all');
   const [activeStatus, setActiveStatus] = useState<string | null>('all');
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+  const [nameFilter, setNameFilter] = useState('');
+  const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0 });
 
   // Store
   const {
@@ -148,6 +175,7 @@ function App() {
     updateLeadStatus,
     updateLeadNotes,
     deleteLeadNote,
+    removeLead,
     statuses,
     addStatus,
     removeStatus,
@@ -180,7 +208,8 @@ function App() {
     categories,
     statuses,
     activeTab,
-    activeStatus
+    activeStatus,
+    nameFilter
   );
 
   // Close dropdown on Escape key
@@ -195,7 +224,13 @@ function App() {
       return;
     }
 
+    // Calcular total esperado para a barra de progresso
+    const categoriesCount = targetCategoryId ? 1 : categories.length;
+    const totalExpected = maxLeadsPerCategory * categoriesCount;
+    setSearchProgress({ current: 0, total: totalExpected });
+
     let totalAddedCount = 0;
+    let totalFetchedCount = 0;
 
     const result = await handleSearch(
       selectedState,
@@ -205,13 +240,27 @@ function App() {
       getApiKey(),
       maxLeadsPerCategory,
       targetCategoryId,
-      (batch) => {
-        totalAddedCount += addLeads(batch);
+      async (batch) => {
+        const added = await addLeads(batch);
+        totalAddedCount += added;
+        totalFetchedCount += batch.length;
+        setSearchProgress(prev => ({ ...prev, current: totalFetchedCount }));
       }
     );
 
+    setSearchProgress({ current: 0, total: 0 });
+
     if (result.success) {
       if (totalAddedCount > 0) {
+        // Disparar confete para celebrar novos leads!
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#22c55e', '#3b82f6', '#eab308', '#ef4444'], // Cores do app (verde, azul, amarelo, vermelho)
+          disableForReducedMotion: true
+        });
+
         const message = result.wasStopped
           ? `Busca interrompida. ${totalAddedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`
           : `Varredura concluída! ${totalAddedCount} novos leads adicionados de ${result.newLeads.length} encontrados.`;
@@ -242,6 +291,33 @@ function App() {
         removeLeadsByCategory(activeTab);
       }
     }
+  };
+
+  /**
+   * Handle individual lead removal with Undo capability
+   */
+  const handleRemoveLead = (placeId: string) => {
+    // Encontrar o lead antes de remover para poder restaurar (usando closure do render atual)
+    const leadToRemove = baseFilteredLeads.find(l => l.place_id === placeId);
+
+    if (!leadToRemove) return;
+
+    removeLead(placeId);
+
+    toast.success((t) => (
+      <div className="flex items-center gap-2">
+        <span>Lead excluído</span>
+        <button
+          onClick={() => {
+            addLeads([leadToRemove]);
+            toast.dismiss(t.id);
+          }}
+          className="px-2 py-1 bg-primary-foreground text-primary text-xs rounded font-bold hover:bg-opacity-90 transition-colors border border-border shadow-sm"
+        >
+          Desfazer
+        </button>
+      </div>
+    ), { duration: 5000, icon: '🗑️' });
   };
 
   const handleSignOut = async () => {
@@ -311,11 +387,11 @@ function App() {
         isAdmin={isAdmin}
         username={profile?.name || user?.user_metadata?.name || user?.email || 'Usuário'}
         handleSignOut={handleSignOut}
-        openCategoryModal={() => setIsCategoryModalOpen(true)}
-        openStatusModal={() => setIsStatusModalOpen(true)}
-        openLocationModal={() => setIsModalOpen(true)}
-        openSettingsModal={() => setIsSettingsModalOpen(true)}
-        openUserModal={() => setIsUserModalOpen(true)}
+        openCategoryModal={openCategoryModal}
+        openStatusModal={openStatusModal}
+        openLocationModal={openLocationModal}
+        openSettingsModal={openSettingsModal}
+        openUserModal={openUserModal}
       />
 
       {/* Main Content */}
@@ -336,11 +412,21 @@ function App() {
             handleClearLeads={handleClearLeads}
             activeTab={activeTab}
             searchStatus={searchStatus}
+            nameFilter={nameFilter}
+            setNameFilter={setNameFilter}
+            setActiveTab={setActiveTab}
           />
         </div>
 
         {/* Leads Display Section */}
         <div className="bg-card border border-border rounded-lg shadow-lg p-6">
+          {/* Barra de Progresso */}
+          <ProgressBar
+            current={searchProgress.current}
+            total={searchProgress.total}
+            isSearching={isSearching}
+          />
+
           {/* Category Tabs and Status Filters */}
           <FilterTabs
             hasLocationSelected={hasLocationSelected}
@@ -357,23 +443,27 @@ function App() {
 
           {/* Empty States and Leads Grid */}
           {!hasLocationSelected ? (
-            <div className="bg-card border border-border rounded-lg shadow-sm p-12 text-center">
-              <MapPin size={48} className="mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                Selecione um <strong>Estado</strong> e <strong>Cidade</strong> para começar.
-              </p>
-            </div>
+            <EmptyState
+              icon={MapPin}
+              description={
+                <>
+                  Selecione um <strong>Estado</strong> e <strong>Cidade</strong> para começar.
+                </>
+              }
+            />
           ) : baseFilteredLeads.length === 0 ? (
-            <div className="bg-card border border-border rounded-lg shadow-sm p-12 text-center">
-              <Search size={48} className="mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                Nenhum lead encontrado para esta localização. Clique em <strong>Buscar Leads</strong> para começar a varredura.
-              </p>
-            </div>
+            <EmptyState
+              icon={Search}
+              description={
+                <>
+                  Nenhum lead encontrado para esta localização. Clique em <strong>Buscar Leads</strong> para começar a varredura.
+                </>
+              }
+            />
           ) : filteredLeads.length === 0 ? (
-            <div className="bg-card border border-border rounded-lg shadow-sm p-12 text-center">
-              <p className="text-muted-foreground">Nenhum lead encontrado com os filtros aplicados.</p>
-            </div>
+            <EmptyState
+              description="Nenhum lead encontrado com os filtros aplicados."
+            />
           ) : (
             <PaginatedLeadsGrid
               filteredLeads={filteredLeads}
@@ -383,17 +473,18 @@ function App() {
               onStatusUpdate={updateLeadStatus}
               onNotesUpdate={updateLeadNotes}
               onNoteDelete={deleteLeadNote}
+              onRemoveLead={handleRemoveLead}
             />
           )}
         </div>
       </main>
 
       {/* Modals */}
-      <LocationManagementModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <LocationManagementModal isOpen={isLocationModalOpen} onClose={closeLocationModal} />
 
       <StatusManagementModal
         isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
+        onClose={closeStatusModal}
         statuses={statuses}
         addStatus={addStatus}
         removeStatus={removeStatus}
@@ -401,18 +492,18 @@ function App() {
 
       <CategoryManagementModal
         isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
+        onClose={closeCategoryModal}
         categories={categories}
         addCategory={addCategory}
         removeCategory={removeCategory}
       />
 
-      <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
+      <SettingsModal isOpen={isSettingsModalOpen} onClose={closeSettingsModal} />
 
       {isAdmin && user && (
         <UserManagementModal
           isOpen={isUserModalOpen}
-          onClose={() => setIsUserModalOpen(false)}
+          onClose={closeUserModal}
           currentUserId={user.id}
         />
       )}

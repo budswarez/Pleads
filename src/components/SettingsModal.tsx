@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings, X, Key, Eye, EyeOff, CheckCircle, AlertCircle, Database, RefreshCw, Loader2, Copy, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 import useStore from '../store/useStore';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 import {
@@ -12,6 +13,7 @@ import {
   fetchCategories,
   fetchStatuses
 } from '../services/supabaseService';
+import { EmptyState } from './EmptyState';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -31,7 +33,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const {
     apiKey, setApiKey, getApiKey,
     supabaseUrl, supabaseAnonKey, supabaseConnected,
-    setSupabaseConfig, setSupabaseConnected,
+    setSupabaseConfig, setSupabaseConnected, getSupabaseConfig,
     loadFromSupabase,
     appTitle, appDescription, appLogoUrl, setBranding,
     maxLeadsPerCategory, setMaxLeadsPerCategory,
@@ -67,8 +69,9 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   useEffect(() => {
     if (isOpen) {
       setLocalApiKey(apiKey || import.meta.env.VITE_GOOGLE_PLACES_KEY || '');
-      setLocalSupabaseUrl(supabaseUrl || '');
-      setLocalSupabaseKey(supabaseAnonKey || '');
+      const config = getSupabaseConfig();
+      setLocalSupabaseUrl(config.url || '');
+      setLocalSupabaseKey(config.anonKey || '');
       setTitle(appTitle || '');
       setDescription(appDescription || '');
       setLogoUrl(appLogoUrl || '');
@@ -225,10 +228,13 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     setSqlCopied(true);
   };
 
-  const handleSaveBranding = () => {
-    setBranding(title, description, logoUrl);
-    setMaxLeadsPerCategory(Number(localMaxLeads));
-    setLeadsPerPage(Number(localLeadsPerPage));
+  const handleSaveBranding = async () => {
+    const loadingToast = toast.loading('Salvando configurações...');
+    await setBranding(title, description, logoUrl);
+    await setMaxLeadsPerCategory(Number(localMaxLeads));
+    await setLeadsPerPage(Number(localLeadsPerPage));
+    toast.dismiss(loadingToast);
+    toast.success('Aparência e limites salvos com sucesso!');
   };
 
   const hasApiKey = !!getApiKey();
@@ -389,11 +395,18 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 </button>
               </div>
 
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs ${hasApiKey ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'
-                }`}>
-                {hasApiKey ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-                <span>{hasApiKey ? 'API Key configurada' : 'Nenhuma API Key configurada'}</span>
-              </div>
+              {hasApiKey ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-green-500/10 text-green-500">
+                  <CheckCircle size={14} />
+                  <span>API Key configurada</span>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={AlertCircle}
+                  description="Nenhuma API Key configurada."
+                  className="py-4 border-dashed bg-yellow-500/5 border-yellow-500/20 shadow-none"
+                />
+              )}
             </form>
           </section>
 
@@ -459,13 +472,18 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               )}
 
               {/* Connection status */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-md text-xs ${supabaseConnected ? 'bg-green-500/10 text-green-500' : 'bg-yellow-500/10 text-yellow-500'
-                }`}
-                role="status"
-              >
-                {supabaseConnected ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-                <span>{supabaseConnected ? 'Conectado ao Supabase' : 'Não conectado'}</span>
-              </div>
+              {supabaseConnected ? (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-green-500/10 text-green-500" role="status">
+                  <CheckCircle size={14} />
+                  <span>Conectado ao Supabase</span>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Database}
+                  description="Não conectado ao Supabase."
+                  className="py-4 border-dashed bg-muted/20 shadow-none"
+                />
+              )}
 
               {/* Action buttons */}
               <div className="grid grid-cols-2 gap-2">

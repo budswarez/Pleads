@@ -84,7 +84,7 @@ export const useSearch = () => {
       }
 
       if (!response) break;
-      const { results, nextPageToken } = response;
+      const { results, next_page_token } = response;
 
       found += results.length;
 
@@ -96,7 +96,7 @@ export const useSearch = () => {
         if (seenPlaceIds.has(lead.place_id)) continue;
         seenPlaceIds.add(lead.place_id);
 
-        let enrichedLead: Lead = {
+        const enrichedLead: Lead = {
           ...lead,
           category: cat.label,
           categoryId: cat.id,
@@ -112,7 +112,7 @@ export const useSearch = () => {
 
       if (count >= maxLeads) break;
 
-      pageToken = nextPageToken;
+      pageToken = next_page_token || null;
 
       if (pageToken && !signal.aborted) {
         try {

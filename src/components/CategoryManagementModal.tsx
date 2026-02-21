@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Settings, X, Plus, Trash2 } from 'lucide-react';
 import type { CategoryManagementModalProps } from '../types';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { EmptyState } from './EmptyState';
 
 /**
  * Modal for managing business categories
@@ -22,10 +23,10 @@ const CategoryManagementModal = ({
 
   if (!isOpen) return null;
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newLabel.trim() && newQuery.trim()) {
-      addCategory(newLabel.trim(), newQuery.trim());
+      await addCategory(newLabel.trim(), newQuery.trim());
       setNewLabel('');
       setNewQuery('');
     }
@@ -93,26 +94,38 @@ const CategoryManagementModal = ({
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1 block">
               Categorias Atuais
             </label>
-            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-border group"
-                >
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-foreground">{cat.label}</span>
-                    <span className="text-[10px] text-muted-foreground">Query: {cat.query}</span>
-                  </div>
-                  <button
-                    onClick={() => removeCategory(cat.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
-                    aria-label={`Remover categoria ${cat.label}`}
+            {categories.length > 0 ? (
+              <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex items-center justify-between p-3 bg-secondary/20 rounded-lg border border-border group"
                   >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">{cat.label}</span>
+                      <span className="text-[10px] text-muted-foreground">Query: {cat.query}</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (window.confirm(`Deseja realmente remover a categoria "${cat.label}"?`)) {
+                          await removeCategory(cat.id);
+                        }
+                      }}
+                      className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                      aria-label={`Remover categoria ${cat.label}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Settings}
+                description="Nenhuma categoria cadastrada."
+                className="py-8 border-dashed bg-muted/20 shadow-none"
+              />
+            )}
           </div>
         </div>
 

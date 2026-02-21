@@ -4,6 +4,7 @@ import { MapPin, X, Trash2, Search, Plus, Loader2 } from 'lucide-react';
 import useStore from '../store/useStore';
 import { useEscapeKey } from '../hooks/useEscapeKey';
 import { fetchNeighborhoods } from '../services/placesService';
+import { EmptyState } from './EmptyState';
 
 interface LocationManagementModalProps {
   isOpen: boolean;
@@ -23,13 +24,13 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
 
   const { locations, addLocation, removeLocation, updateLocationNeighborhoods, getApiKey } = useStore();
 
-  const handleAddLocation = () => {
+  const handleAddLocation = async () => {
     if (!city.trim() || !state.trim()) {
       toast.error('Por favor, preencha Cidade e Estado');
       return;
     }
 
-    const added = addLocation(city.trim(), state.trim());
+    const added = await addLocation(city.trim(), state.trim());
     if (added) {
       setCity('');
       setState('');
@@ -61,7 +62,7 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
         // Merge with existing neighborhoods (don't lose manually added ones)
         const existing = location.neighborhoods || [];
         const merged = [...new Set([...existing, ...neighborhoods])].sort();
-        updateLocationNeighborhoods(location.id, merged);
+        await updateLocationNeighborhoods(location.id, merged);
         toast.success(`${neighborhoods.length} bairros encontrados!`);
       }
       setExpandedLocationId(location.id);
@@ -72,7 +73,7 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
     }
   };
 
-  const handleAddNeighborhood = (locationId: number) => {
+  const handleAddNeighborhood = async (locationId: number) => {
     const name = newNeighborhood[locationId]?.trim();
     if (!name) return;
 
@@ -85,16 +86,16 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
       return;
     }
 
-    updateLocationNeighborhoods(locationId, [...existing, name].sort());
+    await updateLocationNeighborhoods(locationId, [...existing, name].sort());
     setNewNeighborhood(prev => ({ ...prev, [locationId]: '' }));
   };
 
-  const handleRemoveNeighborhood = (locationId: number, neighborhood: string) => {
+  const handleRemoveNeighborhood = async (locationId: number, neighborhood: string) => {
     const location = locations.find(l => l.id === locationId);
     if (!location) return;
 
     const updated = (location.neighborhoods || []).filter(n => n !== neighborhood);
-    updateLocationNeighborhoods(locationId, updated);
+    await updateLocationNeighborhoods(locationId, updated);
   };
 
   // Close modal on Escape key
@@ -226,7 +227,12 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
                             )}
                           </button>
                           <button
-                            onClick={() => removeLocation(location.id)}
+                            onClick={async () => {
+                              const loadingToast = toast.loading(`Removendo ${location.city}...`);
+                              await removeLocation(location.id);
+                              toast.dismiss(loadingToast);
+                              toast.success('Local removido com sucesso');
+                            }}
                             className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
                             title={`Remover ${location.city}, ${location.state}`}
                             aria-label={`Remover ${location.city}, ${location.state}`}
@@ -292,9 +298,11 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhum local cadastrado ainda.
-            </div>
+            <EmptyState
+              icon={MapPin}
+              description="Nenhum local cadastrado ainda."
+              className="mt-6 border-dashed bg-muted/20 shadow-none"
+            />
           )}
         </div>
 

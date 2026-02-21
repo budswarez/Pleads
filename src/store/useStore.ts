@@ -9,11 +9,11 @@ import { createConfigSlice } from './slices/configSlice';
 
 const useStore = create<StoreState>()(
   persist(
-    (...a) => ({
-      ...createLocationSlice(...a),
-      ...createLeadSlice(...a),
-      ...createStatusCategorySlice(...a),
-      ...createConfigSlice(...a),
+    (set, get, api) => ({
+      ...createLocationSlice(set, get, api),
+      ...createLeadSlice(set, get, api),
+      ...createStatusCategorySlice(set, get, api),
+      ...createConfigSlice(set, get, api),
     }),
     {
       name: STORAGE_KEYS.PLEADS_STORE,

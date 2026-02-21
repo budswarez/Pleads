@@ -71,8 +71,8 @@ export interface LocationSlice {
   selectedNeighborhoods: string[];
 
   // Management Methods
-  addLocation: (city: string, state: string) => boolean;
-  removeLocation: (id: number) => void;
+  addLocation: (city: string, state: string) => Promise<boolean>;
+  removeLocation: (id: number) => Promise<void>;
   getStates: () => string[];
   getCitiesByState: (state: string) => string[];
 
@@ -82,7 +82,7 @@ export interface LocationSlice {
   setSelectedNeighborhoods: (neighborhoods: string[]) => void;
 
   // Neighborhood Management Methods
-  updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => void;
+  updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => Promise<void>;
   getNeighborhoodsByLocation: (city: string, state: string) => string[];
 }
 
@@ -91,12 +91,13 @@ export interface LeadSlice {
   leads: Lead[];
 
   // Lead Management Methods
-  addLeads: (leads: Lead[]) => number;
-  clearLeads: (onlySelected?: boolean) => void;
-  removeLeadsByCategory: (categoryId: string) => void;
-  updateLeadStatus: (placeId: string, status: string) => void;
-  updateLeadNotes: (placeId: string, noteText: string) => void;
-  deleteLeadNote: (placeId: string, noteId: number) => void;
+  addLeads: (leads: Lead[]) => Promise<number>;
+  clearLeads: (onlySelected?: boolean) => Promise<void>;
+  removeLeadsByCategory: (categoryId: string) => Promise<void>;
+  updateLeadStatus: (placeId: string, status: string) => Promise<void>;
+  updateLeadNotes: (placeId: string, noteText: string) => Promise<void>;
+  deleteLeadNote: (placeId: string, noteId: number) => Promise<void>;
+  removeLead: (placeId: string) => Promise<void>;
   getFilteredLeads: () => Lead[];
 }
 
@@ -106,13 +107,13 @@ export interface StatusCategorySlice {
   categories: Category[];
 
   // Status Management Methods
-  addStatus: (label: string, color: string) => void;
-  removeStatus: (id: string) => void;
-  updateStatus: (id: string, updates: Partial<Status>) => void;
+  addStatus: (label: string, color: string) => Promise<void>;
+  removeStatus: (id: string) => Promise<void>;
+  updateStatus: (id: string, updates: Partial<Status>) => Promise<void>;
 
   // Category Management Methods
-  addCategory: (label: string, query: string) => void;
-  removeCategory: (id: string) => void;
+  addCategory: (label: string, query: string) => Promise<void>;
+  removeCategory: (id: string) => Promise<void>;
 }
 
 export interface ConfigSlice {
@@ -128,14 +129,14 @@ export interface ConfigSlice {
   leadsPerPage: number;
 
   // Configuration Methods
-  setApiKey: (key: string) => void;
+  setApiKey: (key: string) => Promise<void>;
   getApiKey: () => string;
-  setSupabaseConfig: (url: string, anonKey: string) => void;
+  setSupabaseConfig: (url: string, anonKey: string) => Promise<void>;
   setSupabaseConnected: (connected: boolean) => void;
   getSupabaseConfig: () => { url: string; anonKey: string; connected: boolean };
-  setBranding: (title: string, description: string, logoUrl: string) => void;
-  setMaxLeadsPerCategory: (max: number) => void;
-  setLeadsPerPage: (n: number) => void;
+  setBranding: (title: string, description: string, logoUrl: string) => Promise<void>;
+  setMaxLeadsPerCategory: (max: number) => Promise<void>;
+  setLeadsPerPage: (n: number) => Promise<void>;
 
   // Sync Methods
   getAllDataForSync: () => {
@@ -144,12 +145,13 @@ export interface ConfigSlice {
     categories: Category[];
     statuses: Status[];
   };
-  loadFromSupabase: (data: Partial<{
-    leads: Lead[];
-    locations: Location[];
-    categories: Category[];
-    statuses: Status[];
-  }>) => void;
+  loadFromSupabase: (data: {
+    leads?: Lead[];
+    locations?: Location[];
+    categories?: Category[];
+    statuses?: Status[];
+    settings?: any;
+  }) => void;
 }
 
 /**
@@ -163,7 +165,7 @@ export type StoreState = LocationSlice & LeadSlice & StatusCategorySlice & Confi
 export interface PlacesSearchResult {
   place_id: string;
   name: string;
-  formatted_address?: string;
+  address: string;
   geometry?: {
     location: {
       lat: number;
@@ -172,6 +174,8 @@ export interface PlacesSearchResult {
   };
   rating?: number;
   user_ratings_total?: number;
+  phone?: string;
+  website?: string;
   types?: string[];
 }
 
@@ -214,6 +218,17 @@ export interface SupabaseTableStatus {
   categories: boolean;
   statuses: boolean;
   user_profiles: boolean;
+  settings: boolean;
+}
+
+export interface AppSettings {
+  id: number;
+  app_title: string;
+  app_description: string;
+  app_logo_url: string;
+  max_leads_per_category: number;
+  leads_per_page: number;
+  google_api_key: string;
 }
 
 /**

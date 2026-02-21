@@ -43,6 +43,7 @@ const leadMatchesCategory = (lead: Lead, categoryId: string, categories: Categor
  * @param statuses - Lista de status disponíveis
  * @param activeTab - Categoria ativa (ou 'all' para todas)
  * @param activeStatus - Status ativo (ou 'all' para todos)
+ * @param nameFilter - Texto para filtrar leads pelo nome
  * @returns Objeto com leads filtrados e contadores
  */
 export const useFilteredLeads = (
@@ -50,7 +51,8 @@ export const useFilteredLeads = (
   categories: Category[],
   statuses: Status[],
   activeTab: string,
-  activeStatus: string | null
+  activeStatus: string | null,
+  nameFilter: string = ''
 ) => {
   /**
    * Filtra leads pela categoria ativa
@@ -64,15 +66,25 @@ export const useFilteredLeads = (
   }, [baseLeads, activeTab, categories]);
 
   /**
+   * Filtra leads pelo nome (dentro da categoria ativa)
+   */
+  const leadsByName = useMemo(() => {
+    if (!nameFilter.trim()) return leadsByCategory;
+    
+    const lowerFilter = nameFilter.toLowerCase().trim();
+    return leadsByCategory.filter(lead => lead.name.toLowerCase().includes(lowerFilter));
+  }, [leadsByCategory, nameFilter]);
+
+  /**
    * Filtra leads pela categoria E status ativos
    */
   const finalFilteredLeads = useMemo(() => {
     if (!activeStatus || activeStatus === 'all') {
-      return leadsByCategory;
+      return leadsByName;
     }
 
-    return leadsByCategory.filter(lead => lead.status === activeStatus);
-  }, [leadsByCategory, activeStatus]);
+    return leadsByName.filter(lead => lead.status === activeStatus);
+  }, [leadsByName, activeStatus]);
 
   /**
    * Conta leads por categoria (para tabs)
@@ -100,7 +112,7 @@ export const useFilteredLeads = (
     const counts = new Map<string, number>();
 
     statuses.forEach(status => {
-      const count = leadsByCategory.filter(lead =>
+      const count = leadsByName.filter(lead =>
         lead.status === status.id
       ).length;
 
@@ -108,7 +120,7 @@ export const useFilteredLeads = (
     });
 
     return counts;
-  }, [leadsByCategory, statuses]);
+  }, [leadsByName, statuses]);
 
   /**
    * Conta total de leads na categoria ativa (todos os status)

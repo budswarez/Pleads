@@ -1,50 +1,40 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-/**
- * Hook reutilizável para paginação client-side
- * @param items - Array completo de items a paginar
- * @param itemsPerPage - Quantidade de items por página
- */
 export function usePagination<T>(items: T[], itemsPerPage: number) {
-    const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
-    const totalPages = useMemo(
-        () => Math.max(1, Math.ceil(items.length / itemsPerPage)),
-        [items.length, itemsPerPage]
-    );
+  // Reset to first page when items change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [items.length]); 
 
-    // Reset para página 1 quando items ou itemsPerPage mudam
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [items.length, itemsPerPage]);
+  const totalItems = items.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-    // Garante que a página atual nunca ultrapasse totalPages
-    useEffect(() => {
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedItems = items.slice(startIndex, endIndex);
 
-    const paginatedItems = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return items.slice(startIndex, startIndex + itemsPerPage);
-    }, [items, currentPage, itemsPerPage]);
+  const goToNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
-    const goToNextPage = useCallback(() => {
-        setCurrentPage(prev => Math.min(prev + 1, totalPages));
-    }, [totalPages]);
+  const goToPreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
 
-    const goToPreviousPage = useCallback(() => {
-        setCurrentPage(prev => Math.max(prev - 1, 1));
-    }, []);
+  const goToPage = (page: number) => {
+    const pageNumber = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(pageNumber);
+  };
 
-    return {
-        currentPage,
-        setCurrentPage,
-        totalPages,
-        paginatedItems,
-        goToNextPage,
-        goToPreviousPage,
-        totalItems: items.length,
-    };
+  return {
+    currentPage,
+    totalPages,
+    totalItems,
+    paginatedItems,
+    goToNextPage,
+    goToPreviousPage,
+    goToPage
+  };
 }

@@ -4,7 +4,24 @@ Todas as mudanças notáveis neste projeto serão documentadas neste arquivo.
 
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
-
+ 
+## [2.6.0] - 2026-02-21
+ 
+### ✨ Novas Funcionalidades
+ 
+#### ⚙️ Persistência Global de Configurações
+- **Sincronização de Branding**: Título, descrição e logotipo do sistema agora são persistidos no Supabase e sincronizados entre todos os usuários.
+- **Limites de Busca**: Configurações de "Leads por Página" e "Máximo de Leads por Categoria" agora são salvas no banco de dados.
+- **Persistência de API Key**: A Google Places API Key agora pode ser salva opcionalmente no banco de dados para facilitar a configuração multiplataforma.
+ 
+#### 🚀 Fluxo de Instalação e Setup
+- **RPCs de Configuração**: Adicionadas funções `is_setup_complete` e `setup_first_admin` diretamente no script de inicialização SQL, garantindo que novas instalações funcionem perfeitamente.
+- **Configuração Inicial Automática**: O primeiro administrador agora é confirmado e promovido automaticamente pelo banco durante o setup.
+ 
+### 🐛 Correções e Melhorias
+- **Credenciais no Modal**: Corrigido bug onde Project URL e Anon Key apareciam vazios no Modal de Configurações. Agora eles exibem os valores do `.env` como fallback.
+- **Segurança de Tabelas**: Adicionada a tabela `settings` à verificação automática de integridade do banco de dados.
+ 
 ## [2.5.1] - 2026-02-19
 
 ### ✨ Novas Funcionalidades

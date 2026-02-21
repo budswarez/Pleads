@@ -4,6 +4,7 @@ import { Users, X, Trash2, Plus, Loader2, ShieldCheck, User, KeyRound, Check } f
 import type { UserProfile } from '../types';
 import { listUsers, createUser, deleteUser, adminUpdatePassword } from '../services/authService';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+import { EmptyState } from './EmptyState';
 
 interface UserManagementModalProps {
   isOpen: boolean;
@@ -205,9 +206,11 @@ const UserManagementModal = ({ isOpen, onClose, currentUserId }: UserManagementM
                 <Loader2 size={24} className="animate-spin text-primary" />
               </div>
             ) : users.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                Nenhum usuário cadastrado.
-              </div>
+              <EmptyState
+                icon={Users}
+                description="Nenhum usuário cadastrado."
+                className="py-8 border-dashed bg-muted/20 shadow-none"
+              />
             ) : (
               <div className="space-y-2">
                 {users.map((u) => (

@@ -3,6 +3,9 @@ import type { Lead, Location, Category, Status, SupabaseTableStatus } from '../t
 import { ERROR_MESSAGES, SUPABASE_TABLES } from '../constants';
 
 let supabaseClient: SupabaseClient | null = null;
+let activeSupabaseUrl: string | null = null;
+
+const MAX_LEADS_FETCH_LIMIT = 5000;
 
 /**
  * Supabase operation result
@@ -63,18 +66,15 @@ interface SyncAllDataResult {
  */
 export function initSupabase(url: string, anonKey: string): SupabaseClient | null {
   if (!url || !anonKey) {
+    console.warn('Supabase init failed: missing URL or Key', { url: !!url, key: !!anonKey });
     supabaseClient = null;
     return null;
   }
 
   // Se já estiver inicializado com os mesmos parâmetros, retorna o cliente existente
   // Isso evita o erro "Multiple GoTrueClient instances detected"
-  if (supabaseClient) {
-    // @ts-ignore - acessando propriedade privada para validação
-    const currentUrl = supabaseClient.supabaseUrl;
-    if (currentUrl === url) {
-      return supabaseClient;
-    }
+  if (supabaseClient && activeSupabaseUrl === url) {
+    return supabaseClient;
   }
 
   supabaseClient = createClient(url, anonKey, {
@@ -84,6 +84,7 @@ export function initSupabase(url: string, anonKey: string): SupabaseClient | nul
       detectSessionInUrl: true
     }
   });
+  activeSupabaseUrl = url;
 
   return supabaseClient;
 }
@@ -245,10 +246,105 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Enable RLS for all tables
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE statuses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+-- Add RLS policies
+CREATE POLICY "Allow authenticated access" ON leads FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON locations FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON categories FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON statuses FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON user_profiles FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON settings FOR ALL USING (auth.role() = 'authenticated');
+
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_leads_city_state ON leads(city, state);
 CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
 CREATE INDEX IF NOT EXISTS idx_leads_place_id ON leads(place_id);
+
+-- Settings table
+CREATE TABLE IF NOT EXISTS settings (
+    id BIGINT PRIMARY KEY DEFAULT 1,
+    app_title TEXT,
+    app_description TEXT,
+    app_logo_url TEXT,
+    max_leads_per_category INTEGER DEFAULT 60,
+    leads_per_page INTEGER DEFAULT 60,
+    google_api_key TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT single_row CHECK (id = 1)
+);
+
+-- Insert default settings if not exists
+INSERT INTO settings (id, app_title, app_description, max_leads_per_category, leads_per_page)
+VALUES (1, 'PLeads', 'Sistema de Gestão de Leads', 60, 60)
+ON CONFLICT (id) DO NOTHING;
+
+-- RPC: Check if setup is complete (at least one admin exists)
+CREATE OR REPLACE FUNCTION is_setup_complete()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM user_profiles WHERE role = 'admin');
+END;
+$$;
+
+-- RPC: Setup first admin
+CREATE OR REPLACE FUNCTION setup_first_admin(p_user_id UUID, p_email TEXT, p_name TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  -- Check if any admin already exists
+  SELECT count(*) INTO v_count FROM user_profiles WHERE role = 'admin';
+  
+  IF v_count > 0 THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Setup já foi realizado. Utilize login.');
+  END IF;
+
+  -- Create or update profile
+  INSERT INTO user_profiles (id, email, name, role)
+  VALUES (p_user_id, p_email, p_name, 'admin')
+  ON CONFLICT (id) DO UPDATE 
+  SET role = 'admin', name = p_name;
+
+  -- Confirm email automatically for the first admin
+  UPDATE auth.users SET email_confirmed_at = NOW() WHERE id = p_user_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- RPC: Delete user (Admin only)
+CREATE OR REPLACE FUNCTION admin_delete_user(p_user_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Check if caller is admin
+  IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE id = auth.uid() AND role = 'admin') THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Não autorizado.');
+  END IF;
+
+  -- Delete from auth (cascades to user_profiles due to FK)
+  DELETE FROM auth.users WHERE id = p_user_id;
+
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
 `;
 
 /**
@@ -275,7 +371,8 @@ export async function createTables(url: string, anonKey: string): Promise<TableC
         SUPABASE_TABLES.LOCATIONS,
         SUPABASE_TABLES.CATEGORIES,
         SUPABASE_TABLES.STATUSES,
-        SUPABASE_TABLES.USER_PROFILES
+        SUPABASE_TABLES.USER_PROFILES,
+        SUPABASE_TABLES.SETTINGS
       ];
       const results: Array<{ table: string; exists: boolean }> = [];
 
@@ -321,7 +418,7 @@ export async function checkTables(): Promise<{ success: boolean; tables: Supabas
   if (!client) {
     return {
       success: false,
-      tables: { leads: false, locations: false, categories: false, statuses: false, user_profiles: false }
+      tables: { leads: false, locations: false, categories: false, statuses: false, user_profiles: false, settings: false }
     };
   }
 
@@ -330,7 +427,8 @@ export async function checkTables(): Promise<{ success: boolean; tables: Supabas
     SUPABASE_TABLES.LOCATIONS,
     SUPABASE_TABLES.CATEGORIES,
     SUPABASE_TABLES.STATUSES,
-    SUPABASE_TABLES.USER_PROFILES
+    SUPABASE_TABLES.USER_PROFILES,
+    SUPABASE_TABLES.SETTINGS
   ] as const;
 
   const status: SupabaseTableStatus = {
@@ -338,15 +436,16 @@ export async function checkTables(): Promise<{ success: boolean; tables: Supabas
     locations: false,
     categories: false,
     statuses: false,
-    user_profiles: false
+    user_profiles: false,
+    settings: false
   };
 
   for (const table of tables) {
     try {
       const { error } = await client.from(table).select('*').limit(1);
-      status[table] = !error || !(error.message && error.message.includes('does not exist'));
+      status[table as keyof SupabaseTableStatus] = !error || !(error.message && error.message.includes('does not exist'));
     } catch {
-      status[table] = false;
+      status[table as keyof SupabaseTableStatus] = false;
     }
   }
 
@@ -380,7 +479,7 @@ export async function fetchLeads(
 
   const { data, error } = await query
     .order('created_at', { ascending: false })
-    .limit(5000);
+    .limit(MAX_LEADS_FETCH_LIMIT);
 
   // Map snake_case DB columns to camelCase frontend properties
   const mappedData = (data || []).map((row: any) => ({
@@ -446,6 +545,53 @@ export async function updateLeadInDb(
     .from(SUPABASE_TABLES.LEADS)
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('place_id', placeId);
+
+  return { data, error };
+}
+
+/**
+ * Delete a specific lead from the database
+ * @param placeId - Google Place ID
+ * @returns Result with data and error
+ */
+export async function deleteLeadFromDb(placeId: string): Promise<SupabaseResult> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: ERROR_MESSAGES.SUPABASE_NOT_INITIALIZED };
+  }
+
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.LEADS)
+    .delete()
+    .eq('place_id', placeId);
+
+  return { data, error };
+}
+
+/**
+ * Delete leads by location and optionally by category
+ * @param city - City name
+ * @param state - State abbreviation
+ * @param categoryId - Optional category ID filter
+ * @returns Result with data and error
+ */
+export async function deleteLeadsByLocationFromDb(
+  city: string,
+  state: string,
+  categoryId?: string
+): Promise<SupabaseResult> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: ERROR_MESSAGES.SUPABASE_NOT_INITIALIZED };
+  }
+
+  let query = client.from(SUPABASE_TABLES.LEADS).delete().eq('city', city).eq('state', state);
+
+  if (categoryId) {
+    query = query.eq('category_id', categoryId);
+  }
+
+  const { data, error } = await query;
 
   return { data, error };
 }
@@ -752,6 +898,50 @@ export async function syncAllData(localData: {
     };
   }
 }
+
+// SETTINGS
+
+/**
+ * Fetch settings from Supabase
+ * @returns Settings data and error
+ */
+export async function fetchSettings(): Promise<SupabaseResult> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: ERROR_MESSAGES.SUPABASE_NOT_INITIALIZED };
+  }
+
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.SETTINGS)
+    .select('*')
+    .eq('id', 1)
+    .maybeSingle();
+
+  return { data, error };
+}
+
+/**
+ * Update app settings in Supabase
+ * @param updates - Partial settings object
+ * @returns Result with data and error
+ */
+export async function updateSettings(updates: any): Promise<SupabaseResult> {
+  const client = getSupabase();
+  if (!client) {
+    return { error: ERROR_MESSAGES.SUPABASE_NOT_INITIALIZED };
+  }
+
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.SETTINGS)
+    .upsert({
+      id: 1,
+      ...updates,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+
+  return { data, error };
+}
+
 
 /**
  * Get the SQL for creating tables (for manual execution)

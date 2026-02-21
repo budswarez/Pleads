@@ -1,88 +1,97 @@
 import { StateCreator } from 'zustand';
-import type { StoreState, ConfigSlice } from '../../types';
-import { DEFAULT_BRANDING, DEFAULT_MAX_LEADS_PER_CATEGORY, DEFAULT_LEADS_PER_PAGE } from '../../constants';
+import { StoreState, ConfigSlice } from '../../types';
+import { updateSettings } from '../../services/supabaseService';
 
-export const createConfigSlice: StateCreator<
-    StoreState,
-    [],
-    [],
-    ConfigSlice
-> = (set, get) => ({
-    apiKey: import.meta.env.VITE_GOOGLE_PLACES_KEY || '',
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
-    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-    supabaseConnected: false,
+export const createConfigSlice: StateCreator<StoreState, [], [], ConfigSlice> = (set, get) => ({
+  apiKey: '',
+  supabaseUrl: '',
+  supabaseAnonKey: '',
+  supabaseConnected: false,
+  appTitle: 'PLeads',
+  appDescription: 'Sistema de Gestão de Leads',
+  appLogoUrl: '',
+  maxLeadsPerCategory: 60,
+  leadsPerPage: 60,
 
-    appTitle: DEFAULT_BRANDING.TITLE,
-    appDescription: DEFAULT_BRANDING.DESCRIPTION,
-    appLogoUrl: DEFAULT_BRANDING.LOGO_URL,
+  setApiKey: async (key) => {
+    const { supabaseConnected } = get();
+    if (supabaseConnected) {
+      await updateSettings({ google_api_key: key });
+    }
+    set({ apiKey: key });
+  },
 
-    maxLeadsPerCategory: DEFAULT_MAX_LEADS_PER_CATEGORY,
-    leadsPerPage: DEFAULT_LEADS_PER_PAGE,
+  getApiKey: () => {
+    // Priority: Store > Env Var
+    return get().apiKey || import.meta.env.VITE_GOOGLE_PLACES_KEY || '';
+  },
 
-    setBranding: (title: string, description: string, logoUrl: string) => {
-        set({
-            appTitle: title,
-            appDescription: description,
-            appLogoUrl: logoUrl
-        });
-    },
+  setSupabaseConfig: async (url, anonKey) => {
+    // We don't save DB config IN the DB for obvious reasons,
+    // but we can save it to localStorage via Zustand persist.
+    set({ supabaseUrl: url, supabaseAnonKey: anonKey });
+  },
 
-    setMaxLeadsPerCategory: (max: number) => {
-        set({ maxLeadsPerCategory: max });
-    },
+  setSupabaseConnected: (connected) => set({ supabaseConnected: connected }),
 
-    setLeadsPerPage: (n: number) => {
-        set({ leadsPerPage: n });
-    },
+  getSupabaseConfig: () => {
+    const { supabaseUrl, supabaseAnonKey, supabaseConnected } = get();
+    return {
+      url: supabaseUrl || import.meta.env.VITE_SUPABASE_URL || '',
+      anonKey: supabaseAnonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+      connected: supabaseConnected
+    };
+  },
 
-    setApiKey: (key: string) => {
-        set({ apiKey: key });
-    },
+  setBranding: async (title, description, logoUrl) => {
+    const { supabaseConnected } = get();
+    if (supabaseConnected) {
+      await updateSettings({
+        app_title: title,
+        app_description: description,
+        app_logo_url: logoUrl
+      });
+    }
+    set({
+      appTitle: title,
+      appDescription: description,
+      appLogoUrl: logoUrl
+    });
+  },
 
-    getApiKey: (): string => {
-        const stateKey = get().apiKey;
-        return stateKey && stateKey.trim() !== ''
-            ? stateKey
-            : (import.meta.env.VITE_GOOGLE_PLACES_KEY || '');
-    },
+  setMaxLeadsPerCategory: async (max) => {
+    const { supabaseConnected } = get();
+    if (supabaseConnected) {
+      await updateSettings({ max_leads_per_category: max });
+    }
+    set({ maxLeadsPerCategory: max });
+  },
 
-    setSupabaseConfig: (url: string, anonKey: string) => {
-        set({ supabaseUrl: url, supabaseAnonKey: anonKey });
-    },
+  setLeadsPerPage: async (n) => {
+    const { supabaseConnected } = get();
+    if (supabaseConnected) {
+      await updateSettings({ leads_per_page: n });
+    }
+    set({ leadsPerPage: n });
+  },
 
-    setSupabaseConnected: (connected: boolean) => {
-        set({ supabaseConnected: connected });
-    },
+  getAllDataForSync: () => {
+    const { leads, locations, categories, statuses } = get();
+    return { leads, locations, categories, statuses };
+  },
 
-    getSupabaseConfig: () => {
-        const state = get();
-        return {
-            url: state.supabaseUrl,
-            anonKey: state.supabaseAnonKey,
-            connected: state.supabaseConnected
-        };
-    },
-
-    getAllDataForSync: () => {
-        const state = get();
-        return {
-            leads: state.leads,
-            locations: state.locations,
-            categories: state.categories,
-            statuses: state.statuses
-        };
-    },
-
-    loadFromSupabase: (data) => {
-        const updates: Partial<StoreState> = {};
-        if (data.leads && data.leads.length > 0) updates.leads = data.leads;
-        if (data.locations && data.locations.length > 0) updates.locations = data.locations;
-        if (data.categories && data.categories.length > 0) updates.categories = data.categories;
-        if (data.statuses && data.statuses.length > 0) updates.statuses = data.statuses;
-
-        if (Object.keys(updates).length > 0) {
-            set(updates);
-        }
-    },
+  loadFromSupabase: (data) => {
+    set((state) => ({
+      leads: data.leads || state.leads,
+      locations: data.locations || state.locations,
+      categories: data.categories || state.categories,
+      statuses: data.statuses || state.statuses,
+      appTitle: data.settings?.app_title || state.appTitle,
+      appDescription: data.settings?.app_description || state.appDescription,
+      appLogoUrl: data.settings?.app_logo_url || state.appLogoUrl,
+      maxLeadsPerCategory: data.settings?.max_leads_per_category || state.maxLeadsPerCategory,
+      leadsPerPage: data.settings?.leads_per_page || state.leadsPerPage,
+      apiKey: data.settings?.google_api_key || state.apiKey
+    }));
+  }
 });

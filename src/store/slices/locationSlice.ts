@@ -1,94 +1,96 @@
 import { StateCreator } from 'zustand';
-import type { StoreState, LocationSlice } from '../../types';
-import { getSupabase, upsertLocation } from '../../services/supabaseService';
+import { StoreState, LocationSlice, Location } from '../../types';
+import { upsertLocation, deleteLocation } from '../../services/supabaseService';
 
-export const createLocationSlice: StateCreator<
-    StoreState,
-    [],
-    [],
-    LocationSlice
-> = (set, get) => ({
-    locations: [],
-    selectedState: null,
+export const createLocationSlice: StateCreator<StoreState, [], [], LocationSlice> = (set, get) => ({
+  locations: [],
+  selectedState: null,
+  selectedCity: null,
+  selectedNeighborhoods: [],
+
+  addLocation: async (city, state) => {
+    const { locations, supabaseConnected } = get();
+    const exists = locations.some(
+      l => l.city.toLowerCase() === city.toLowerCase() &&
+        l.state.toLowerCase() === state.toLowerCase()
+    );
+
+    if (exists) return false;
+
+    if (supabaseConnected) {
+      await upsertLocation(city, state);
+    }
+
+    const newLocation: Location = {
+      id: Date.now(),
+      city,
+      state,
+      neighborhoods: []
+    };
+
+    set({ locations: [...locations, newLocation] });
+    return true;
+  },
+
+  removeLocation: async (id) => {
+    const { locations, supabaseConnected } = get();
+    const location = locations.find(l => l.id === id);
+
+    if (location && supabaseConnected) {
+      await deleteLocation(location.city, location.state);
+    }
+
+    set(state => ({
+      locations: state.locations.filter(l => l.id !== id),
+      // Reset selection if removed
+      selectedCity: null,
+      selectedState: null,
+      selectedNeighborhoods: []
+    }));
+  },
+
+  getStates: () => {
+    const { locations } = get();
+    const states = new Set(locations.map(l => l.state));
+    return Array.from(states).sort();
+  },
+
+  getCitiesByState: (state) => {
+    const { locations } = get();
+    return locations
+      .filter(l => l.state === state)
+      .map(l => l.city)
+      .sort();
+  },
+
+  setSelectedState: (state) => set({
+    selectedState: state,
     selectedCity: null,
-    selectedNeighborhoods: [],
+    selectedNeighborhoods: []
+  }),
 
-    addLocation: (city: string, state: string): boolean => {
-        const exists = get().locations.some(
-            loc => loc.city.toLowerCase() === city.toLowerCase() &&
-                loc.state.toLowerCase() === state.toLowerCase()
-        );
+  setSelectedCity: (city) => set({
+    selectedCity: city,
+    selectedNeighborhoods: []
+  }),
 
-        if (!exists) {
-            set(prevState => ({
-                locations: [...prevState.locations, { city, state, id: Date.now(), neighborhoods: [] }]
-            }));
+  setSelectedNeighborhoods: (neighborhoods) => set({ selectedNeighborhoods: neighborhoods }),
 
-            // Auto-sync to Supabase if connected
-            const { supabaseConnected } = get();
-            if (supabaseConnected && getSupabase()) {
-                upsertLocation(city, state, []).catch(err =>
-                    console.error('[Auto-sync] Failed to sync location:', err)
-                );
-            }
+  updateLocationNeighborhoods: async (locationId, neighborhoods) => {
+    const { locations, supabaseConnected } = get();
+    const location = locations.find(l => l.id === locationId);
 
-            return true;
-        }
-        return false;
-    },
+    if (location && supabaseConnected) {
+      await upsertLocation(location.city, location.state, neighborhoods);
+    }
 
-    removeLocation: (id: number) => {
-        set(prevState => ({
-            locations: prevState.locations.filter(loc => loc.id !== id)
-        }));
-    },
+    set(state => ({
+      locations: state.locations.map(l => l.id === locationId ? { ...l, neighborhoods } : l)
+    }));
+  },
 
-    setSelectedState: (state: string | null) => {
-        set({ selectedState: state, selectedCity: null, selectedNeighborhoods: [] });
-    },
-
-    setSelectedCity: (city: string | null) => {
-        set({ selectedCity: city, selectedNeighborhoods: [] });
-    },
-
-    setSelectedNeighborhoods: (neighborhoods: string[]) => {
-        set({ selectedNeighborhoods: neighborhoods });
-    },
-
-    updateLocationNeighborhoods: (locationId: number, neighborhoods: string[]) => {
-        set(prevState => ({
-            locations: prevState.locations.map(loc =>
-                loc.id === locationId ? { ...loc, neighborhoods } : loc
-            )
-        }));
-
-        // Auto-sync to Supabase if connected
-        const { supabaseConnected } = get();
-        const location = get().locations.find(loc => loc.id === locationId);
-        if (supabaseConnected && getSupabase() && location) {
-            upsertLocation(location.city, location.state, neighborhoods).catch(err =>
-                console.error('[Auto-sync] Failed to sync location neighborhoods:', err)
-            );
-        }
-    },
-
-    getNeighborhoodsByLocation: (city: string, state: string): string[] => {
-        const location = get().locations.find(
-            loc => loc.city.toLowerCase() === city.toLowerCase() &&
-                loc.state.toLowerCase() === state.toLowerCase()
-        );
-        return location?.neighborhoods || [];
-    },
-
-    getStates: (): string[] => {
-        const states = [...new Set(get().locations.map(loc => loc.state))];
-        return states.sort();
-    },
-
-    getCitiesByState: (state: string): string[] => {
-        const cities = get().locations
-            .filter(loc => loc.state === state)
-            .map(loc => loc.city);
-        return [...new Set(cities)].sort();
-    },
+  getNeighborhoodsByLocation: (city, state) => {
+    const loc = get().locations.find(l => l.city === city && l.state === state);
+    return loc ? loc.neighborhoods : [];
+  }
 });

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Globe, MessageCircle, ExternalLink, Star, StarHalf, FileText } from 'lucide-react';
+import { MapPin, Phone, Globe, MessageCircle, ExternalLink, Star, StarHalf, FileText, Trash2 } from 'lucide-react';
 import LeadNotesModal from './LeadNotesModal';
 import type { Lead, Status, Category } from '../types';
 
@@ -10,6 +10,7 @@ interface LeadCardProps {
   onStatusUpdate: (placeId: string, status: string) => void;
   onNotesUpdate: (placeId: string, notes: string) => void;
   onNoteDelete: (placeId: string, noteId: number) => void;
+  onRemoveLead: (placeId: string) => void;
 }
 
 /**
@@ -72,7 +73,8 @@ const LeadCard = React.memo(({
   categories,
   onStatusUpdate,
   onNotesUpdate,
-  onNoteDelete
+  onNoteDelete,
+  onRemoveLead
 }: LeadCardProps) => {
   // Obter cor do status
   const getStatusColor = (statusId?: string): string => {
@@ -91,9 +93,17 @@ const LeadCard = React.memo(({
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const notesCount = lead.notes ? lead.notes.length : 0;
   const isMobile = isMobileNumber(lead.phone);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    setTimeout(() => {
+      onRemoveLead(lead.place_id);
+    }, 300);
+  };
 
   return (
-    <div className="bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 flex flex-col hover:shadow-md transition-shadow">
+    <div className={`bg-card border border-border rounded-lg shadow-sm p-4 md:p-6 flex flex-col hover:shadow-md transition-all duration-300 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
       {/* Header com nome e status */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
@@ -110,6 +120,14 @@ const LeadCard = React.memo(({
             {getCategoryLabel()}
           </span>
         </div>
+        <button
+          onClick={handleDelete}
+          className="text-muted-foreground hover:text-destructive transition-colors p-1 -mr-2 -mt-2"
+          aria-label={`Excluir lead ${lead.name}`}
+          title="Excluir lead"
+        >
+          <Trash2 size={16} />
+        </button>
       </div>
 
       {/* Informações de contato */}

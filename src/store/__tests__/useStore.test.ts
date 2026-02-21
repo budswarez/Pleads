@@ -138,6 +138,21 @@ describe('useStore', () => {
       expect(filtered).toEqual([]);
     });
 
+    it('should remove a lead by place_id', () => {
+      const { addLeads, removeLead } = useStore.getState();
+      const lead1 = createMockLead('1');
+      const lead2 = createMockLead('2');
+
+      addLeads([lead1, lead2]);
+      expect(useStore.getState().leads).toHaveLength(2);
+
+      removeLead('1');
+
+      const { leads } = useStore.getState();
+      expect(leads).toHaveLength(1);
+      expect(leads[0].place_id).toBe('2');
+    });
+
     it('should update lead status', () => {
       const { addLeads, updateLeadStatus } = useStore.getState();
       addLeads([createMockLead('1', { status: 'NEW' })]);

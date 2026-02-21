@@ -1,27 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2023"
-    ],
-    "module": "ESNext",
-    "skipLibCheck": true,
     "composite": true,
-    /* Bundler mode */
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "skipLibCheck": true,
+    "module": "ESNext",
     "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "emitDeclarationOnly": true,
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    /* Linting */
+    "allowSyntheticDefaultImports": true,
     "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "allowSyntheticDefaultImports": true
+    "noEmit": true
   },
-  "include": [
-    "vite.config.ts",
-    "vite.config.js"
-  ]
+  "include": ["vite.config.ts", "vitest.config.ts", "tailwind.config.js"]
 }
