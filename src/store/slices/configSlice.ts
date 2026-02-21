@@ -9,7 +9,7 @@ export const createConfigSlice: StateCreator<StoreState, [], [], ConfigSlice> = 
   supabaseConnected: false,
   appTitle: 'PLeads',
   appDescription: 'Sistema de Gestão de Leads',
-  appLogoUrl: '',
+  appLogoUrl: '/logo.png',
   maxLeadsPerCategory: 60,
   leadsPerPage: 60,
 

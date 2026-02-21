@@ -17,7 +17,13 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - **Ferramenta de Exportação CSV**: Adicionado botão "Exportar CSV" que converte a base de leads atual em um arquivo compatível com Excel e Google Sheets.
 - **Detalhamento Completo**: O arquivo exportado inclui nome, endereço, telefone, website, categoria, avaliações e todas as notas com data.
 
+#### 🎨 Identidade e Branding
+- **Novo Logotipo de Alta Resolução**: Integração de novo ícone estilizado com acabamento metálico e 3D.
+- **Branding de Alto Impacto**: Logo 40% maior com efeitos de brilho (glow) e animações interativas.
+- **Tipografia Reforçada**: Ajustes de escala e estilo nos títulos para maior autoridade visual.
+
 #### 🏘️ Experiência do Usuário (UX)
+- **Redesign Visual Premium**: Interface completamente reformulada com Glassmorphism, gradientes, micro-animações e tipografia refinada para um visual profissional e moderno.
 - **Adição de Bairros em Massa**: Agora é possível cadastrar múltiplos bairros de uma só vez separando-os por vírgula no campo de entrada.
 - **Filtro de Locais por Estado**: A lista de locais cadastrados agora é filtrada automaticamente pelo estado selecionado, facilitando a gestão em grandes bases.
 - **Deduplicação Inteligente**: O sistema remove espaços e evita a adição de bairros duplicados automaticamente.

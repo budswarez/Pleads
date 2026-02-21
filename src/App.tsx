@@ -395,8 +395,8 @@ function App() {
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto">
-        <div className="bg-card border border-border rounded-lg shadow-lg p-6 mb-6">
+      <main className="max-w-7xl mx-auto space-y-6">
+        <div className="glass-effect rounded-2xl shadow-xl p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
           <LocationSelector />
 
           {/* Search Actions */}
@@ -419,7 +419,7 @@ function App() {
         </div>
 
         {/* Leads Display Section */}
-        <div className="bg-card border border-border rounded-lg shadow-lg p-6">
+        <div className="glass-effect rounded-2xl shadow-xl p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
           {/* Barra de Progresso */}
           <ProgressBar
             current={searchProgress.current}

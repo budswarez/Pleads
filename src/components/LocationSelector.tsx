@@ -78,24 +78,24 @@ const LocationSelector = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* State Selector */}
-      <div>
+      <div className="space-y-2">
         <label
           htmlFor="state-selector"
-          className="block text-sm font-medium text-muted-foreground mb-2"
+          className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
         >
-          Selecione o Estado
+          Estado (UF)
         </label>
-        <div className="relative">
+        <div className="relative group">
           <select
             id="state-selector"
             value={selectedState || ''}
             onChange={handleStateChange}
             disabled={states.length === 0}
-            className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-secondary/30 hover:bg-secondary/50 text-foreground border border-border/50 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 appearance-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
             aria-label="Selecione o Estado"
           >
             <option value="">
-              {states.length === 0 ? 'Nenhum estado cadastrado' : 'Selecione...'}
+              {states.length === 0 ? 'Nenhum estado cadastrado' : 'Selecione o estado...'}
             </option>
             {states.map((state, index) => (
               <option key={`state-${index}`} value={state}>
@@ -104,28 +104,28 @@ const LocationSelector = () => {
             ))}
           </select>
           <ChevronDown
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            size={18}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none group-hover:text-primary transition-colors"
             aria-hidden="true"
           />
         </div>
       </div>
 
       {/* City Selector */}
-      <div>
+      <div className="space-y-2">
         <label
           htmlFor="city-selector"
-          className="block text-sm font-medium text-muted-foreground mb-2"
+          className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1"
         >
-          Selecione a Cidade
+          Cidade
         </label>
-        <div className="relative">
+        <div className="relative group">
           <select
             id="city-selector"
             value={selectedCity || ''}
             onChange={handleCityChange}
             disabled={!selectedState || cities.length === 0}
-            className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-secondary/30 hover:bg-secondary/50 text-foreground border border-border/50 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 appearance-none disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
             aria-label="Selecione a Cidade"
           >
             <option value="">
@@ -133,7 +133,7 @@ const LocationSelector = () => {
                 ? 'Selecione um estado primeiro'
                 : cities.length === 0
                   ? 'Nenhuma cidade cadastrada'
-                  : 'Selecione...'}
+                  : 'Selecione a cidade...'}
             </option>
             {cities.map((city, index) => (
               <option key={`city-${index}`} value={city}>
@@ -142,16 +142,16 @@ const LocationSelector = () => {
             ))}
           </select>
           <ChevronDown
-            size={16}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+            size={18}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none group-hover:text-primary transition-colors"
             aria-hidden="true"
           />
         </div>
       </div>
 
       {/* Neighborhood Multi-Select */}
-      <div className="md:col-span-2" ref={dropdownRef}>
-        <label className="block text-sm font-medium text-muted-foreground mb-2">
+      <div className="md:col-span-2 space-y-2" ref={dropdownRef}>
+        <label className="block text-xs font-bold uppercase tracking-widest text-muted-foreground/70 ml-1">
           Bairros (Opcional)
         </label>
 
@@ -159,17 +159,17 @@ const LocationSelector = () => {
           <EmptyState
             icon={MapPinOff}
             description={
-              <span className="text-xs">
+              <span className="text-xs font-medium">
                 Nenhum bairro cadastrado. A busca será feita em toda a cidade.
                 <br />
-                Cadastre bairros na <strong>Gestão de Locais</strong> para filtrar.
+                <span className="opacity-60">Cadastre bairros na Gestão de Locais para filtrar.</span>
               </span>
             }
-            className="p-4 py-6 border-dashed bg-muted/20"
+            className="p-4 py-8 border-dashed bg-secondary/10 rounded-xl"
           />
         ) : (
           <>
-            <div className="relative">
+            <div className="relative group">
               <button
                 type="button"
                 onClick={() => {
@@ -178,16 +178,16 @@ const LocationSelector = () => {
                   }
                 }}
                 disabled={!selectedCity || neighborhoods.length === 0}
-                className="w-full bg-input text-foreground border border-input rounded-md px-3 py-2 pr-10 text-sm text-left focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-secondary/30 hover:bg-secondary/50 text-foreground border border-border/50 rounded-xl px-4 py-3 pr-10 text-sm text-left focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                 aria-label="Selecionar bairros"
               >
-                <span className={!selectedCity || neighborhoods.length === 0 || selectedNeighborhoods.length === 0 ? 'text-muted-foreground/50' : ''}>
+                <span className={`font-medium ${!selectedCity || neighborhoods.length === 0 || selectedNeighborhoods.length === 0 ? 'text-muted-foreground/50' : 'text-primary animate-in fade-in'}`}>
                   {getDropdownLabel()}
                 </span>
               </button>
               <ChevronDown
-                size={16}
-                className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                size={18}
+                className={`absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 pointer-events-none transition-all duration-300 ${isDropdownOpen ? 'rotate-180 text-primary' : 'group-hover:text-primary'}`}
                 aria-hidden="true"
               />
 
