@@ -105,9 +105,9 @@ const LeadCard = React.memo(({
   };
 
   return (
-    <div className={`bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} ${viewMode === 'grid' ? 'p-4 md:p-6 flex flex-col' : 'p-2.5 px-4 flex items-center gap-3'}`}>
+    <div className={`bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} ${viewMode === 'grid' ? 'p-4 md:p-6 flex flex-col' : 'p-3 md:p-2.5 md:px-4 flex flex-col md:flex-row md:items-center gap-2 md:gap-3'}`}>
       {/* Header com nome e status */}
-      <div className={`${viewMode === 'grid' ? 'flex justify-between items-start mb-4' : 'flex-1 grid grid-cols-1 md:grid-cols-4 items-center gap-2'}`}>
+      <div className={`${viewMode === 'grid' ? 'flex justify-between items-start mb-4' : 'flex-1 flex flex-col md:grid md:grid-cols-4 items-start md:items-center gap-2'}`}>
         <div className={`${viewMode === 'grid' ? 'flex-1' : 'md:col-span-2'}`}>
           <div className="flex items-center gap-2 mb-1">
             <div
@@ -116,7 +116,7 @@ const LeadCard = React.memo(({
               aria-label={`Status: ${lead.status}`}
               title={lead.status}
             />
-            <h3 className={`font-semibold line-clamp-1 truncate ${viewMode === 'grid' ? 'text-base md:text-lg' : 'text-sm'}`}>{lead.name}</h3>
+            <h3 className={`font-semibold line-clamp-1 truncate ${viewMode === 'grid' ? 'text-base md:text-lg' : 'text-xs md:text-sm'}`}>{lead.name}</h3>
           </div>
           <span className="text-[10px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full inline-block">
             {getCategoryLabel()}
@@ -125,22 +125,22 @@ const LeadCard = React.memo(({
 
         {viewMode === 'list' && (
           <>
-            <div className="text-xs text-muted-foreground flex items-center gap-2 md:col-span-1 min-w-0">
+            <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-2 md:col-span-1 min-w-0">
               <MapPin size={12} className="flex-shrink-0" />
-              <span className="truncate">{lead.address}</span>
+              <span className="truncate md:line-clamp-1">{lead.address}</span>
             </div>
-            <div className="flex items-center justify-end gap-3 md:col-span-1">
-              {lead.phone && <span className="text-xs font-mono hidden md:inline">{lead.phone}</span>}
+            <div className="flex items-center justify-between md:justify-end gap-3 md:col-span-1">
+              {lead.phone && <span className="text-[10px] md:text-xs font-mono">{lead.phone}</span>}
               {isMobile ? (
                 <button
                   onClick={(e) => { e.stopPropagation(); openWhatsApp(lead.phone); }}
-                  className="p-1.5 text-white bg-green-600 hover:bg-green-700 rounded-full transition-colors shadow-sm"
+                  className="p-1.5 text-white bg-green-600 hover:bg-green-700 rounded-full transition-colors shadow-sm shrink-0"
                   title="Entrar em contato via WhatsApp"
                 >
                   <MessageCircle size={14} />
                 </button>
               ) : (
-                <div className="p-1.5 text-muted-foreground bg-secondary/50 rounded-full border border-border opacity-50 cursor-not-allowed">
+                <div className="p-1.5 text-muted-foreground bg-secondary/50 rounded-full border border-border opacity-50 cursor-not-allowed shrink-0">
                   <MessageCircle size={14} />
                 </div>
               )}
@@ -216,37 +216,39 @@ const LeadCard = React.memo(({
       )}
 
       {/* Ações / Footer */}
-      <div className={`${viewMode === 'grid' ? 'mb-4' : 'flex items-center gap-3 ml-auto'}`}>
+      <div className={`${viewMode === 'grid' ? 'mb-4' : 'flex items-center justify-between md:justify-start gap-3 md:ml-auto w-full md:w-auto'}`}>
         <button
           onClick={() => setIsNotesModalOpen(true)}
-          className={`flex items-center justify-center gap-2 font-medium text-secondary-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border shadow-sm ${viewMode === 'grid' ? 'w-full py-2 px-4 text-xs' : 'py-1.5 px-3 text-[10px]'}`}
+          className={`flex items-center justify-center gap-2 font-medium text-secondary-foreground bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border shadow-sm ${viewMode === 'grid' ? 'w-full py-2 px-4 text-xs' : 'py-1 px-2.5 md:py-1.5 md:px-3 text-[10px]'}`}
         >
           <FileText size={viewMode === 'grid' ? 14 : 12} />
           {notesCount > 0 ? `${notesCount} anotaç${notesCount === 1 ? 'ão' : 'ões'}` : 'Anotação'}
         </button>
 
         {viewMode === 'list' && (
-          <div className="flex items-center gap-2">
-            <select
-              className="text-[10px] bg-secondary border border-border rounded px-2 py-1 focus:outline-none"
-              value={lead.status || 'NEW'}
-              onChange={(e) => onStatusUpdate(lead.place_id, e.target.value)}
-            >
-              {statuses.map(s => (
-                <option key={s.id} value={s.id}>{s.label}</option>
-              ))}
-            </select>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.name)}&query_place_id=${lead.place_id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[10px] text-primary hover:underline flex items-center gap-1"
-            >
-              Maps <ExternalLink size={10} />
-            </a>
+          <div className="flex items-center gap-2 bg-secondary/30 md:bg-transparent p-2 md:p-0 rounded-lg md:rounded-none w-full md:w-auto justify-between md:justify-start mt-2 md:mt-0">
+            <div className="flex items-center gap-2">
+              <select
+                className="text-[10px] bg-secondary border border-border rounded px-2 py-1 focus:outline-none"
+                value={lead.status || 'NEW'}
+                onChange={(e) => onStatusUpdate(lead.place_id, e.target.value)}
+              >
+                {statuses.map(s => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+              </select>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.name)}&query_place_id=${lead.place_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-primary hover:underline flex items-center gap-1"
+              >
+                Maps <ExternalLink size={10} />
+              </a>
+            </div>
             <button
               onClick={handleDelete}
-              className="text-muted-foreground hover:text-destructive transition-colors p-1"
+              className="text-muted-foreground hover:text-destructive transition-colors p-1 ml-2"
             >
               <Trash2 size={14} />
             </button>

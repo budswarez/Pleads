@@ -290,7 +290,7 @@ function App() {
 
   // --- Authenticated App ---
   return (
-    <div className="min-h-screen bg-background text-foreground p-8 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans transition-colors duration-300">
       {/* Header */}
       <Header
         appTitle={appTitle}
@@ -308,7 +308,7 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto space-y-6">
-        <div className="glass-effect rounded-2xl shadow-xl p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
+        <div className="glass-effect rounded-2xl shadow-xl p-4 md:p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
           <LocationSelector />
 
           {/* Search Actions */}
@@ -331,7 +331,7 @@ function App() {
         </div>
 
         {/* Leads Display Section */}
-        <div className="glass-effect rounded-2xl shadow-xl p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
+        <div className="glass-effect rounded-2xl shadow-xl p-4 md:p-6 transition-all duration-500 hover:shadow-primary/5 border border-border/50">
           {/* Barra de Progresso */}
           <ProgressBar
             current={searchProgress.current}

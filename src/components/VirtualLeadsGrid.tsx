@@ -26,16 +26,20 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     const parentRef = useRef<HTMLDivElement>(null);
     const { leadsViewMode } = useStore();
     const [columns, setColumns] = useState(1);
+    const [isMobile, setIsMobile] = useState(false);
 
     // Update columns based on container width
     useEffect(() => {
         const updateColumns = () => {
             if (!parentRef.current) return;
+            const width = parentRef.current.offsetWidth;
+            const mobile = width < 768;
+            setIsMobile(mobile);
+
             if (leadsViewMode === 'list') {
                 setColumns(1);
                 return;
             }
-            const width = parentRef.current.offsetWidth;
             if (width >= 1024) setColumns(3); // lg
             else if (width >= 768) setColumns(2); // md
             else setColumns(1); // sm
@@ -59,14 +63,17 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => leadsViewMode === 'grid' ? 380 : 80, // Reduced further for compact list
+        estimateSize: () => {
+            if (leadsViewMode === 'grid') return 380;
+            return isMobile ? 140 : 80; // Adjusted for a more compact vertical stack
+        },
         overscan: 10,
     });
 
     return (
         <div
             ref={parentRef}
-            className="h-[800px] overflow-auto rounded-xl border border-border/50 bg-background/20 p-4 custom-scrollbar"
+            className="h-[calc(100vh-280px)] min-h-[500px] overflow-auto rounded-xl border border-border/50 bg-background/20 p-1 md:p-4 custom-scrollbar"
             style={{
                 contain: 'strict',
             }}
@@ -91,9 +98,11 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
                         }}
                     >
                         <div
-                            className="grid gap-6 px-1"
+                            className={leadsViewMode === 'grid' ? "grid gap-6 px-1" : "grid gap-2 md:gap-6"}
                             style={{
-                                gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                                gridTemplateColumns: leadsViewMode === 'grid'
+                                    ? `repeat(${columns}, minmax(0, 1fr))`
+                                    : '1fr',
                             }}
                         >
                             {rows[virtualRow.index].map((lead) => (
