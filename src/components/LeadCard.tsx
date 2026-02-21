@@ -105,9 +105,9 @@ const LeadCard = React.memo(({
   };
 
   return (
-    <div className={`bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} ${viewMode === 'grid' ? 'p-4 md:p-6 flex flex-col' : 'p-3 flex items-center gap-4'}`}>
+    <div className={`bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ${isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'} ${viewMode === 'grid' ? 'p-4 md:p-6 flex flex-col' : 'p-2.5 px-4 flex items-center gap-3'}`}>
       {/* Header com nome e status */}
-      <div className={`${viewMode === 'grid' ? 'flex justify-between items-start mb-4' : 'flex-1 grid grid-cols-1 md:grid-cols-4 items-center gap-4'}`}>
+      <div className={`${viewMode === 'grid' ? 'flex justify-between items-start mb-4' : 'flex-1 grid grid-cols-1 md:grid-cols-4 items-center gap-2'}`}>
         <div className={`${viewMode === 'grid' ? 'flex-1' : 'md:col-span-2'}`}>
           <div className="flex items-center gap-2 mb-1">
             <div

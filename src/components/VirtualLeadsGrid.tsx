@@ -59,8 +59,8 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
     const rowVirtualizer = useVirtualizer({
         count: rows.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => leadsViewMode === 'grid' ? 380 : 180, // Lower height for list items
-        overscan: 5,
+        estimateSize: () => leadsViewMode === 'grid' ? 380 : 80, // Reduced further for compact list
+        overscan: 10,
     });
 
     return (
@@ -97,7 +97,7 @@ const VirtualLeadsGrid: React.FC<VirtualLeadsGridProps> = ({
                             }}
                         >
                             {rows[virtualRow.index].map((lead) => (
-                                <div key={lead.place_id} className={leadsViewMode === 'grid' ? "pb-6" : "pb-3"}>
+                                <div key={lead.place_id} className={leadsViewMode === 'grid' ? "pb-6" : "pb-2"}>
                                     <LeadCard
                                         lead={lead}
                                         statuses={statuses}
