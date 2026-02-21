@@ -19,7 +19,11 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
 #### 🏘️ Experiência do Usuário (UX)
 - **Adição de Bairros em Massa**: Agora é possível cadastrar múltiplos bairros de uma só vez separando-os por vírgula no campo de entrada.
+- **Filtro de Locais por Estado**: A lista de locais cadastrados agora é filtrada automaticamente pelo estado selecionado, facilitando a gestão em grandes bases.
 - **Deduplicação Inteligente**: O sistema remove espaços e evita a adição de bairros duplicados automaticamente.
+
+#### 🐛 Correções de Bugs
+- **BrasilAPI (SC)**: Corrigido bug onde nomes de cidades em Santa Catarina apareciam como "ORD" devido a uma instabilidade no provedor Wikipedia.
 
 ## [2.6.0] - 2026-02-21
  

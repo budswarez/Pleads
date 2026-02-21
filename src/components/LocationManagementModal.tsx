@@ -251,140 +251,158 @@ const LocationManagementModal = ({ isOpen, onClose }: LocationManagementModalPro
           </div>
 
           {/* Locations List */}
-          {locations.length > 0 ? (
-            <div className="border-t border-border pt-4">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                Locais Cadastrados ({locations.length})
-              </h3>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {locations.map((location) => {
-                  const neighborhoods = location.neighborhoods || [];
-                  const isExpanded = expandedLocationId === location.id;
-                  const isLoading = loadingLocationId === location.id;
+          {(() => {
+            const filteredLocations = state
+              ? locations.filter(l => l.state === state)
+              : locations;
 
-                  return (
-                    <div
-                      key={location.id}
-                      className="bg-secondary/50 rounded-md border border-border"
+            return filteredLocations.length > 0 ? (
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    {state
+                      ? `Locais em ${state} (${filteredLocations.length})`
+                      : `Todos os Locais (${locations.length})`}
+                  </h3>
+                  {state && locations.length > filteredLocations.length && (
+                    <button
+                      onClick={() => setState('')}
+                      className="text-[10px] text-primary hover:underline"
                     >
-                      {/* Location header */}
-                      <div className="flex items-center justify-between px-4 py-3">
-                        <button
-                          className="flex items-center gap-2 flex-1 text-left"
-                          onClick={() => setExpandedLocationId(isExpanded ? null : location.id)}
-                        >
-                          <MapPin size={16} className="text-primary flex-shrink-0" />
-                          <span className="text-sm font-medium text-foreground">
-                            {location.city}, {location.state}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({neighborhoods.length} bairros)
-                          </span>
-                        </button>
+                      Ver todos os estados
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                  {filteredLocations.map((location) => {
+                    const neighborhoods = location.neighborhoods || [];
+                    const isExpanded = expandedLocationId === location.id;
+                    const isLoading = loadingLocationId === location.id;
 
-                        <div className="flex items-center gap-1">
+                    return (
+                      <div
+                        key={location.id}
+                        className="bg-secondary/50 rounded-md border border-border"
+                      >
+                        {/* Location header */}
+                        <div className="flex items-center justify-between px-4 py-3">
                           <button
-                            onClick={() => handleFetchNeighborhoods(location)}
-                            disabled={isLoading}
-                            className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors disabled:opacity-50"
-                            title="Buscar bairros automaticamente"
-                            aria-label={`Buscar bairros de ${location.city}`}
+                            className="flex items-center gap-2 flex-1 text-left"
+                            onClick={() => setExpandedLocationId(isExpanded ? null : location.id)}
                           >
-                            {isLoading ? (
-                              <Loader2 size={14} className="animate-spin" />
-                            ) : (
-                              <Search size={14} />
-                            )}
+                            <MapPin size={16} className="text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium text-foreground">
+                              {location.city}, {location.state}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({neighborhoods.length} bairros)
+                            </span>
                           </button>
 
-                          {neighborhoods.length > 0 && (
+                          <div className="flex items-center gap-1">
                             <button
-                              onClick={() => handleClearNeighborhoods(location.id)}
-                              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
-                              title="Limpar todos os bairros"
+                              onClick={() => handleFetchNeighborhoods(location)}
+                              disabled={isLoading}
+                              className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors disabled:opacity-50"
+                              title="Buscar bairros automaticamente"
+                              aria-label={`Buscar bairros de ${location.city}`}
                             >
-                              <X size={14} />
+                              {isLoading ? (
+                                <Loader2 size={14} className="animate-spin" />
+                              ) : (
+                                <Search size={14} />
+                              )}
                             </button>
-                          )}
 
-                          <button
-                            onClick={async () => {
-                              const loadingToast = toast.loading(`Removendo ${location.city}...`);
-                              await removeLocation(location.id);
-                              toast.dismiss(loadingToast);
-                              toast.success('Local removido com sucesso');
-                            }}
-                            className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
-                            title={`Remover ${location.city}, ${location.state}`}
-                            aria-label={`Remover ${location.city}, ${location.state}`}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
+                            {neighborhoods.length > 0 && (
+                              <button
+                                onClick={() => handleClearNeighborhoods(location.id)}
+                                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
+                                title="Limpar todos os bairros"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
 
-                      {/* Expanded: neighborhoods */}
-                      {isExpanded && (
-                        <div className="px-4 pb-3 border-t border-border/50 pt-3">
-                          {/* Add neighborhood input */}
-                          <div className="flex gap-2 mb-2">
-                            <input
-                              type="text"
-                              placeholder="Adicionar bairro (separe por vírgula)..."
-                              className="flex-1 bg-input text-foreground border border-input rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
-                              value={newNeighborhood[location.id] || ''}
-                              onChange={(e) => setNewNeighborhood(prev => ({ ...prev, [location.id]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleAddNeighborhood(location.id);
-                              }}
-                            />
                             <button
-                              onClick={() => handleAddNeighborhood(location.id)}
-                              className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs hover:bg-opacity-90 transition-colors"
-                              aria-label="Adicionar bairro"
+                              onClick={async () => {
+                                const loadingToast = toast.loading(`Removendo ${location.city}...`);
+                                await removeLocation(location.id);
+                                toast.dismiss(loadingToast);
+                                toast.success('Local removido com sucesso');
+                              }}
+                              className="text-destructive hover:bg-destructive/10 p-1.5 rounded transition-colors"
+                              title={`Remover ${location.city}, ${location.state}`}
+                              aria-label={`Remover ${location.city}, ${location.state}`}
                             >
-                              <Plus size={12} />
+                              <Trash2 size={14} />
                             </button>
                           </div>
-
-                          {/* Neighborhoods list */}
-                          {neighborhoods.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {neighborhoods.map((neighborhood) => (
-                                <span
-                                  key={neighborhood}
-                                  className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                                >
-                                  {neighborhood}
-                                  <button
-                                    onClick={() => handleRemoveNeighborhood(location.id, neighborhood)}
-                                    className="hover:text-destructive transition-colors"
-                                    aria-label={`Remover ${neighborhood}`}
-                                  >
-                                    <X size={10} />
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              Nenhum bairro cadastrado. Clique em <Search size={10} className="inline" /> para buscar automaticamente.
-                            </p>
-                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+
+                        {/* Expanded: neighborhoods */}
+                        {isExpanded && (
+                          <div className="px-4 pb-3 border-t border-border/50 pt-3">
+                            {/* Add neighborhood input */}
+                            <div className="flex gap-2 mb-2">
+                              <input
+                                type="text"
+                                placeholder="Adicionar bairro (separe por vírgula)..."
+                                className="flex-1 bg-input text-foreground border border-input rounded-md px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                                value={newNeighborhood[location.id] || ''}
+                                onChange={(e) => setNewNeighborhood(prev => ({ ...prev, [location.id]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleAddNeighborhood(location.id);
+                                }}
+                              />
+                              <button
+                                onClick={() => handleAddNeighborhood(location.id)}
+                                className="bg-primary text-primary-foreground px-2 py-1 rounded-md text-xs hover:bg-opacity-90 transition-colors"
+                                aria-label="Adicionar bairro"
+                              >
+                                <Plus size={12} />
+                              </button>
+                            </div>
+
+                            {/* Neighborhoods list */}
+                            {neighborhoods.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {neighborhoods.map((neighborhood) => (
+                                  <span
+                                    key={neighborhood}
+                                    className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                                  >
+                                    {neighborhood}
+                                    <button
+                                      onClick={() => handleRemoveNeighborhood(location.id, neighborhood)}
+                                      className="hover:text-destructive transition-colors"
+                                      aria-label={`Remover ${neighborhood}`}
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Nenhum bairro cadastrado. Clique em <Search size={10} className="inline" /> para buscar automaticamente.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ) : (
-            <EmptyState
-              icon={MapPin}
-              description="Nenhum local cadastrado ainda."
-              className="mt-6 border-dashed bg-muted/20 shadow-none"
-            />
-          )}
+            ) : (
+              <EmptyState
+                icon={MapPin}
+                description={state ? `Nenhum local cadastrado em ${state}.` : "Nenhum local cadastrado ainda."}
+                className="mt-6 border-dashed bg-muted/20 shadow-none"
+              />
+            );
+          })()}
         </div>
 
         {/* Footer */}

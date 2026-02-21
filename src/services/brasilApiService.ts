@@ -38,7 +38,7 @@ export const fetchCities = async (stateAbbreviation: string): Promise<City[]> =>
     if (!stateAbbreviation) return [];
 
     try {
-        const response = await fetch(`${BASE_URL}/municipios/v1/${stateAbbreviation}?providers=dados-abertos-br,gov,wikipedia`);
+        const response = await fetch(`${BASE_URL}/municipios/v1/${stateAbbreviation}?providers=dados-abertos-br,gov`);
         if (!response.ok) throw new Error(`BrasilAPI Error: ${response.status}`);
         const data = await response.json();
         return data.sort((a: City, b: City) => a.nome.localeCompare(b.nome));
